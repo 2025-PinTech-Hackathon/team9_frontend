@@ -28,19 +28,19 @@ function Main() {
     {
       size: "150px",
       opacity: 0.8,
-      position: { top: "20px", right: "50px" },
+      position: { top: "40px", right: "70px" },
       delay: 0
     },
     {
       size: "120px",
       opacity: 0.7,
-      position: { top: "130px", right: "150px" },
+      position: { top: "150px", right: "170px" },
       delay: 0.5
     },
     {
       size: "120px",
       opacity: 0.9,
-      position: { top: "50px", right: "250px" },
+      position: { top: "70px", right: "270px" },
       delay: 1
     }
   ];

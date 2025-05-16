@@ -9,15 +9,27 @@ import { useNavigate } from "react-router-dom";
 import grassTexture from "../assets/farm/grass1.png";
 import bigTreeImage from "../assets/farm/big_tree.png";
 import { motion, AnimatePresence } from "framer-motion";
+import {
+    Box,
+    Text,
+    VStack,
+    HStack,
+    Badge,
+    Stat,
+    StatLabel,
+    StatNumber,
+    StatHelpText,
+    StatArrow,
+} from "@chakra-ui/react";
 
 const TILE_WIDTH = 120;
 const TILE_HEIGHT = 120;
 const BASE_WIDTH = 1024;
 const BASE_HEIGHT = 700;
 const absXOffset = 180;
-const absYOffset = 170;
+const absYOffset = 120;
 const absTreeXOffset = 180;
-const absTreeYOffset = 90;
+const absTreeYOffset = 40;
 
 const positions = [
     { x: 350, y: 160, id: 1 },
@@ -112,6 +124,129 @@ const WaterDrop = memo(({ x, onComplete }) => {
                 pointerEvents: "none",
             }}
         />
+    );
+});
+
+// 투자봇 정보 말풍선 컴포넌트
+const InvestmentTooltip = memo(({ investment, x, y }) => (
+    <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: 10 }}
+        transition={{ duration: 0.2 }}
+        style={{
+            position: "absolute",
+            left: x - 100, // 말풍선 중앙 정렬을 위해 너비의 절반만큼 왼쪽으로 이동
+            top: y - 180, // 나무 위에 위치하도록 조정
+            zIndex: 10,
+            pointerEvents: "none", // 말풍선이 마우스 이벤트를 방해하지 않도록 설정
+        }}
+    >
+        <Box
+            bg="white"
+            borderRadius="lg"
+            boxShadow="lg"
+            p={3}
+            width="200px"
+            position="relative"
+            _after={{
+                content: '""',
+                position: "absolute",
+                bottom: "-8px",
+                left: "50%",
+                transform: "translateX(-50%)",
+                borderWidth: "8px",
+                borderStyle: "solid",
+                borderColor: "white transparent transparent transparent",
+            }}
+        >
+            <VStack spacing={2} align="stretch">
+                <HStack justify="space-between">
+                    <Text fontWeight="bold" color="gray.700">
+                        {investment.coin_type}
+                    </Text>
+                    <Badge
+                        colorScheme={investment.current_profit >= 0 ? "green" : "red"}
+                        fontSize="sm"
+                    >
+                        {investment.current_profit >= 0 ? "+" : ""}
+                        {((investment.current_profit / investment.initial_amount) * 100).toFixed(1)}%
+                    </Badge>
+                </HStack>
+                <HStack justify="space-between" fontSize="sm">
+                    <Text color="gray.600">투자 금액</Text>
+                    <Text color="gray.800" fontWeight="semibold">
+                        {investment.initial_amount.toLocaleString()}원
+                    </Text>
+                </HStack>
+                <HStack justify="space-between" fontSize="sm">
+                    <Text color="gray.600">수익금</Text>
+                    <Text 
+                        color={investment.current_profit >= 0 ? "green.500" : "red.500"}
+                        fontWeight="semibold"
+                    >
+                        {investment.current_profit >= 0 ? "+" : ""}
+                        {investment.current_profit.toLocaleString()}원
+                    </Text>
+                </HStack>
+                <HStack justify="space-between" fontSize="sm">
+                    <Text color="gray.600">출금 가능</Text>
+                    <Text color="blue.500" fontWeight="bold">
+                        {(investment.initial_amount + investment.current_profit).toLocaleString()}원
+                    </Text>
+                </HStack>
+            </VStack>
+        </Box>
+    </motion.div>
+));
+
+// 투자 정보 요약 컴포넌트
+const InvestmentSummary = memo(({ investments }) => {
+    const totalInvestment = investments.reduce((sum, inv) => sum + inv.initial_amount, 0);
+    const totalProfit = investments.reduce((sum, inv) => sum + inv.current_profit, 0);
+    const totalWithdrawable = totalInvestment + totalProfit;
+    const totalProfitRate = totalInvestment > 0 
+        ? (totalProfit / totalInvestment) * 100 
+        : 0;
+
+    return (
+        <Box
+            position="absolute"
+            left="20px"
+            top="20px"
+            bg="transparent"
+            p={4}
+            width="auto"
+            minWidth="280px"
+            zIndex={5}
+        >
+            <VStack spacing={1} align="stretch">
+                <Text fontSize="md" fontWeight="semibold" color="gray.600" mb={-1}>
+                    출금 가능 금액
+                </Text>
+                <Text fontSize="2xl" fontWeight="bold" color="gray.800">
+                    {totalWithdrawable.toLocaleString()}원
+                </Text>
+                <HStack spacing={2} mt={2}>
+                    <Text fontSize="sm" color="gray.500">
+                        수익률
+                    </Text>
+                    <Badge
+                        colorScheme={totalProfit >= 0 ? "green" : "red"}
+                        variant="subtle"
+                        px={2}
+                        py={0.5}
+                    >
+                        {totalProfit >= 0 ? "+" : ""}
+                        {totalProfitRate.toFixed(1)}%
+                    </Badge>
+                    <Text fontSize="sm" color="gray.500">
+                        {totalProfit >= 0 ? "+" : ""}
+                        {totalProfit.toLocaleString()}원
+                    </Text>
+                </HStack>
+            </VStack>
+        </Box>
     );
 });
 
@@ -225,88 +360,104 @@ const Farm = ({ investments = [] }) => {
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.5, delay: 0.2 }}
             >
-                {/* 땅(타일) 그리기 */}
-                {positions.map((p) => (
-                    <motion.div
-                        key={p.id}
-                        initial={{
-                            opacity: 0,
-                            y: -50
-                        }}
-                        animate={{
-                            opacity: selectedTileId ? (p.id === selectedTileId ? 1 : 0) : 1,
-                            scale: selectedTileId && p.id === selectedTileId ? 1.1 : 1,
-                            y: selectedTileId && p.id === selectedTileId ? -20 : 0
-                        }}
-                        transition={{
-                            duration: 0.5,
-                            delay: isInitialAnimationDone ? 0 : getAnimationDelay(p.id),
-                            ease: "easeOut"
-                        }}
-                        style={{
-                            position: "relative",
-                            zIndex: hoveredTileId === p.id ? 2 : 1
-                        }}
-                    >
-                        <Ground
-                            x={p.x - TILE_WIDTH / 2 + absXOffset}
-                            y={p.y - TILE_HEIGHT / 2 + absYOffset}
-                            onClick={() => handleTileClick(p.id)}
-                            isHovered={hoveredTileId === p.id}
-                            hoveredTileExists={hoveredTileId !== null}
-                            onMouseEnter={() => handleMouseEnter(p.id)}
-                            onMouseLeave={handleMouseLeave}
-                        />
-                    </motion.div>
-                ))}
+                {/* 투자 정보 요약 */}
+                <InvestmentSummary investments={investments} />
 
-                {/* 투자 위치에 나무 표시 */}
-                {investments.map((investment) => {
-                    const position = positions.find(p => p.id === investment.internal_position);
-                    if (!position) return null;
-                    
-                    const isHovered = hoveredTileId === investment.internal_position;
-                    
+                {positions.map((p) => {
+                    const investment = investments.find(inv => inv.internal_position === p.id);
+                    const isHovered = hoveredTileId === p.id;
+                    const delay = isInitialAnimationDone ? 0 : getAnimationDelay(p.id);
+
                     return (
-                        <motion.div
-                            key={investment.id}
-                            initial={{
-                                opacity: 0,
-                                y: -50
-                            }}
-                            animate={{
-                                opacity: selectedTileId ? 0 : 1,
-                                y: isHovered ? -10 : 0
-                            }}
-                            transition={{
-                                duration: HOVER_ANIMATION_DURATION,
-                                ease: "easeOut"
-                            }}
-                            style={{
-                                position: "relative",
-                                zIndex: 3
-                            }}
-                        >
-                            <motion.img
-                                src={bigTreeImage}
-                                alt="Investment Tree"
+                        <React.Fragment key={p.id}>
+                            {/* 땅(타일) */}
+                            <motion.div
+                                initial={{
+                                    opacity: 0,
+                                    y: -50
+                                }}
                                 animate={{
-                                    opacity: hoveredTileId !== null && !isHovered ? 0.5 : 1
+                                    opacity: selectedTileId ? (p.id === selectedTileId ? 1 : 0) : 1,
+                                    scale: selectedTileId && p.id === selectedTileId ? 1.1 : 1,
+                                    y: selectedTileId && p.id === selectedTileId ? -20 : 0
                                 }}
                                 transition={{
-                                    duration: HOVER_ANIMATION_DURATION,
+                                    duration: 0.5,
+                                    delay,
                                     ease: "easeOut"
                                 }}
                                 style={{
-                                    position: "absolute",
-                                    left: position.x - TILE_WIDTH / 2 + absTreeXOffset,
-                                    top: position.y - TILE_HEIGHT / 2 + absTreeYOffset,
-                                    width: TILE_WIDTH * 1.5,
-                                    height: TILE_HEIGHT * 1.4,
-                                    pointerEvents: "none",
+                                    position: "relative",
+                                    zIndex: hoveredTileId === p.id ? 2 : 1
                                 }}
-                            />
-                        </motion.div>
+                            >
+                                <Ground
+                                    x={p.x - TILE_WIDTH / 2 + absXOffset}
+                                    y={p.y - TILE_HEIGHT / 2 + absYOffset}
+                                    onClick={() => handleTileClick(p.id)}
+                                    isHovered={isHovered}
+                                    hoveredTileExists={hoveredTileId !== null}
+                                    onMouseEnter={() => handleMouseEnter(p.id)}
+                                    onMouseLeave={handleMouseLeave}
+                                />
+                            </motion.div>
+
+                            {/* 투자봇 나무 */}
+                            {investment && (
+                                <React.Fragment>
+                                    <motion.div
+                                        initial={{
+                                            opacity: 0,
+                                            y: -50
+                                        }}
+                                        animate={{
+                                            opacity: selectedTileId ? 0 : 1,
+                                            y: isHovered ? -10 : 0
+                                        }}
+                                        transition={{
+                                            duration: isInitialAnimationDone ? HOVER_ANIMATION_DURATION : 0.5,
+                                            delay,
+                                            ease: "easeOut"
+                                        }}
+                                        style={{
+                                            position: "relative",
+                                            zIndex: 3
+                                        }}
+                                    >
+                                        <motion.img
+                                            src={bigTreeImage}
+                                            alt="Investment Tree"
+                                            animate={{
+                                                opacity: hoveredTileId !== null && !isHovered ? 0.5 : 1
+                                            }}
+                                            transition={{
+                                                duration: HOVER_ANIMATION_DURATION,
+                                                ease: "easeOut"
+                                            }}
+                                            style={{
+                                                position: "absolute",
+                                                left: p.x - TILE_WIDTH / 2 + absTreeXOffset,
+                                                top: p.y - TILE_HEIGHT / 2 + absTreeYOffset,
+                                                width: TILE_WIDTH * 1.5,
+                                                height: TILE_HEIGHT * 1.4,
+                                                pointerEvents: "none",
+                                            }}
+                                        />
+                                    </motion.div>
+
+                                    {/* 투자봇 정보 말풍선 */}
+                                    <AnimatePresence>
+                                        {isHovered && (
+                                            <InvestmentTooltip
+                                                investment={investment}
+                                                x={p.x + absTreeXOffset}
+                                                y={p.y + absTreeYOffset}
+                                            />
+                                        )}
+                                    </AnimatePresence>
+                                </React.Fragment>
+                            )}
+                        </React.Fragment>
                     );
                 })}
 
