@@ -71,7 +71,7 @@ function Main() {
 
   return (
     <Box minH="100vh" bg="brand.sky">
-      <Container maxW="1024px" h="100vh" position="relative" overflow="hidden">
+      <Container maxW="1024px" minH="100vh" position="relative" pb="80px">
         {/* 배경 구름들 */}
         <Box position="absolute" w="100%" h="100%" zIndex={0}>
           {clouds.map((cloud, index) => (
@@ -94,6 +94,7 @@ function Main() {
         left={0}
         right={0}
         bg={bgColor}
+        zIndex={100}
         boxShadow="0 -2px 10px rgba(0,0,0,0.1)"
       >
         <Container maxW="1024px">
