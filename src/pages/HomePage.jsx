@@ -16,10 +16,17 @@ function HomePage() {
         width="100%"
         height="80vh"
         minHeight="600px"
+        position="relative"
+        zIndex={1}
       >
         홈 페이지
         <br />
-        <Box width="100%" height="100%">
+        <Box 
+          width="100%" 
+          height="100%" 
+          position="relative"
+          zIndex={1}
+        >
           <Farm onNavigate={navigate} />
         </Box>
       </Box>

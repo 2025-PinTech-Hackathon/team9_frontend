@@ -1,29 +1,6 @@
-import { Box, Image } from "@chakra-ui/react";
-import { keyframes } from "@emotion/react";
+import { Box } from "@chakra-ui/react";
+import Cloud from "./fancy/Cloud";
 
-const floatAnimation = keyframes`
-  0% { transform: translateY(0px); }
-  50% { transform: translateY(-20px); }
-  100% { transform: translateY(0px); }
-`;
-
-const Cloud = ({ src, size, opacity, position, delay }) => {
-  const animation = `${floatAnimation} 3s ease-in-out ${delay}s infinite`;
-  
-  return (
-    <Image
-      src={src}
-      alt="구름"
-      w={size}
-      h="auto"
-      opacity={opacity}
-      position="absolute"
-      {...position}
-      animation={animation}
-      zIndex={0}
-    />
-  );
-};
 
 function AuthLayout({ children }) {
   const clouds = [
@@ -64,7 +41,6 @@ function AuthLayout({ children }) {
           {clouds.map((cloud, index) => (
             <Cloud
               key={index}
-              src="/src/assets/farm3d/cloud.svg"
               {...cloud}
             />
           ))}

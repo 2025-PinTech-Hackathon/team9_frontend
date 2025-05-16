@@ -14,25 +14,27 @@ import SettingPage from "./pages/SettingPage";
 import DetailPage from "./pages/DetailPage";
 import CreateInvestPage from "./pages/CreateInvestPage";
 import theme from "./theme";
+import { UserProvider } from "./contexts/UserContext";
 
 function App() {
   return (
     <ChakraProvider theme={theme}>
       <Box minH="100vh" w="100vw" overflowX="hidden">
         <Router>
-          <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/main" element={<Main />}>
-              <Route index element={<HomePage />} />
-              <Route path="transfer" element={<TransferPage />} />
-              <Route path="settings" element={<SettingPage />} />
-              <Route path="detail" element={<DetailPage />} />
-              <Route path="create" element={<CreateInvestPage />} />
-              
-            </Route>
-            <Route path="/" element={<Navigate to="/login" replace />} />
-          </Routes>
+          <UserProvider>
+            <Routes>
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/main" element={<Main />}>
+                <Route index element={<HomePage />} />
+                <Route path="transfer" element={<TransferPage />} />
+                <Route path="settings" element={<SettingPage />} />
+                <Route path="detail" element={<DetailPage />} />
+                <Route path="create" element={<CreateInvestPage />} />
+              </Route>
+              <Route path="/" element={<Navigate to="/login" replace />} />
+            </Routes>
+          </UserProvider>
         </Router>
       </Box>
     </ChakraProvider>

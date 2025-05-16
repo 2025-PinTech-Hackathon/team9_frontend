@@ -15,13 +15,35 @@ import {
   faMoneyBillTransfer,
 } from "@fortawesome/free-solid-svg-icons";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
-import { useUserInfo } from '../hooks/useUserInfo';
+import { useUser } from '../contexts/UserContext';
+import Cloud from '../components/fancy/Cloud';
 
 function Main() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { isLoading, error } = useUserInfo();
+  const { userInfo, isLoading, error } = useUser();
   const bgColor = useColorModeValue("white", "brand.darkGray");
+
+  const clouds = [
+    {
+      size: "150px",
+      opacity: 0.8,
+      position: { top: "20px", right: "50px" },
+      delay: 0
+    },
+    {
+      size: "120px",
+      opacity: 0.7,
+      position: { top: "130px", right: "150px" },
+      delay: 0.5
+    },
+    {
+      size: "120px",
+      opacity: 0.9,
+      position: { top: "50px", right: "250px" },
+      delay: 1
+    }
+  ];
 
   if (isLoading) {
     return (
@@ -34,15 +56,35 @@ function Main() {
   if (error) {
     return (
       <Center h="100vh">
-        <Text color="red.500">에러가 발생했습니다 😢: {error}</Text>
+        <Box
+          bg="white"
+          p={6}
+          borderRadius="lg"
+          boxShadow="md"
+          textAlign="center"
+        >
+          <Text color="red.500">에러가 발생했습니다 😢: {error}</Text>
+        </Box>
       </Center>
     );
   }
 
   return (
     <Box minH="100vh" bg="brand.sky">
-      <Container maxW="1024px" pb="80px">
-        <Outlet />
+      <Container maxW="1024px" h="100vh" position="relative" overflow="hidden">
+        {/* 배경 구름들 */}
+        <Box position="absolute" w="100%" h="100%" zIndex={0}>
+          {clouds.map((cloud, index) => (
+            <Cloud
+              key={index}
+              {...cloud}
+            />
+          ))}
+        </Box>
+
+        <Box position="relative" zIndex={2}>
+          <Outlet />
+        </Box>
       </Container>
 
       {/* 하단 네비게이션 */}

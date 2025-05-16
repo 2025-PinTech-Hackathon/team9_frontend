@@ -21,7 +21,8 @@ export const useUserInfo = () => {
             });
 
             const data = await response.json();
-            setUserInfo(data);
+            const userInfo = data.user;
+            setUserInfo(userInfo);
             setError(null);
         } catch (err) {
             setError(err.message);
