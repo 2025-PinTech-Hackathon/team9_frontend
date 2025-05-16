@@ -20,7 +20,8 @@ import { useUserInfo } from '../hooks/useUserInfo';
 function Main() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { userInfo, isLoading, error } = useUserInfo();
+  const { isLoading, error } = useUserInfo();
+  const bgColor = useColorModeValue("white", "brand.darkGray");
 
   if (isLoading) {
     return (
@@ -50,7 +51,7 @@ function Main() {
         bottom={0}
         left={0}
         right={0}
-        bg={useColorModeValue("white", "brand.darkGray")}
+        bg={bgColor}
         boxShadow="0 -2px 10px rgba(0,0,0,0.1)"
       >
         <Container maxW="1024px">

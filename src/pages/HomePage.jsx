@@ -1,7 +1,10 @@
 import Farm from "../components/Farm.jsx";
 import { Box, Container } from "@chakra-ui/react";
+import { useNavigate } from "react-router-dom";
 
 function HomePage() {
+  const navigate = useNavigate();
+
   return (
     <Container maxW="1024px" px={4} py={8}>
       <Box
@@ -17,7 +20,7 @@ function HomePage() {
         홈 페이지
         <br />
         <Box width="100%" height="100%">
-          <Farm />
+          <Farm onNavigate={navigate} />
         </Box>
       </Box>
     </Container>

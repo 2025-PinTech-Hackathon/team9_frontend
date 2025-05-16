@@ -1,6 +1,6 @@
 import { Application, extend, useTick } from "@pixi/react";
-import { useCallback, useState, useEffect, useRef } from "react";
-import { Texture, Container, Sprite, Graphics, Assets } from "pixi.js";
+import { useCallback, useState, useEffect, useRef, memo } from "react";
+import { Texture, Container, Sprite, Graphics, Assets, Rectangle } from "pixi.js";
 import grassTexture from "../assets/farm/grass1.png";
 
 extend({
@@ -107,12 +107,19 @@ const WaterDrop = ({ x, y, onComplete }) => {
   );
 };
 
-const Farm = () => {
+const Farm = memo(({ onNavigate }) => {
+  const containerRef = useRef(null);
   const [waterDrops, setWaterDrops] = useState([]);
   const [isWatering, setIsWatering] = useState(false);
   const [dimensions, setDimensions] = useState({ width: 1024, height: 700 });
   const [scale, setScale] = useState(1);
-  const containerRef = useRef(null);
+
+  const handlePositionClick = useCallback((id, level) => {
+    console.log(id, level);
+    if (level === 0) {
+      onNavigate(`/main/create?id=${id}`);
+    }
+  }, [onNavigate]);
 
   useEffect(() => {
     const updateDimensions = () => {
@@ -174,15 +181,15 @@ const Farm = () => {
   const absXOffset = 180;
   const absYOffset = 170;
   const positions = [
-    { x: 400, y: 200 }, // 1
-    { x: 300, y: 260 },
-    { x: 500, y: 260 }, // 2
-    { x: 200, y: 320 },
-    { x: 400, y: 320 },
-    { x: 600, y: 320 }, // 3
-    { x: 300, y: 380 },
-    { x: 500, y: 380 }, // 2
-    { x: 400, y: 440 }, // 1
+    { x: 400, y: 200, id: 1, level: 0 }, // 1
+    { x: 300, y: 260, id: 2, level: 1 },
+    { x: 500, y: 260, id: 3, level: 1 }, // 2
+    { x: 200, y: 320, id: 4, level: 2 },
+    { x: 400, y: 320, id: 5, level: 2 },
+    { x: 600, y: 320, id: 6, level: 2 }, // 3
+    { x: 300, y: 380, id: 7, level: 1 },
+    { x: 500, y: 380, id: 8, level: 1 }, // 2
+    { x: 400, y: 440, id: 9, level: 0 }, // 1
   ];
 
   return (
@@ -209,12 +216,21 @@ const Farm = () => {
         <pixiContainer scale={scale}>
           {/* 땅과 나무 배치 */}
           {positions.map((pos, index) => (
-            <pixiContainer key={index}>
+            <pixiContainer 
+              key={index}
+              interactive={true}
+              pointerdown={() => handlePositionClick(pos.id, pos.level)}
+              hitArea={new Rectangle(
+                pos.x - TILE_WIDTH / 2 + absXOffset - TILE_WIDTH * 0.75,
+                pos.y - TILE_HEIGHT / 2 + absYOffset - TILE_HEIGHT * 0.5,
+                TILE_WIDTH * 1.5,
+                TILE_HEIGHT
+              )}
+            >
               <Ground
                 x={pos.x - TILE_WIDTH / 2 + absXOffset}
                 y={pos.y - TILE_HEIGHT / 2 + absYOffset}
               />
-              {/* <Tree x={pos.x} y={pos.y} scale={0.8} /> */}
             </pixiContainer>
           ))}
 
@@ -250,6 +266,8 @@ const Farm = () => {
       </Application>
     </div>
   );
-};
+});
+
+Farm.displayName = 'Farm';
 
 export default Farm;
