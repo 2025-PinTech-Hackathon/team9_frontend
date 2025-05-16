@@ -25,10 +25,22 @@ import {
   StatHelpText,
   Badge,
   useColorModeValue,
+  Image,
+  InputGroup,
+  InputRightAddon,
 } from "@chakra-ui/react";
 import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import FarmDetail from "../components/FarmDetail";
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip as RechartsTooltip,
+  ResponsiveContainer
+} from 'recharts';
 
 function DetailPage() {
   const canvasRef = useRef(null);
@@ -41,7 +53,26 @@ function DetailPage() {
     riskLevel: 0,
     expectedReturn: 0,
     availableAmount: 0,
+    coinInfo: {
+      symbol: "BTC",
+      name: "Bitcoin",
+      currentPrice: 65000,
+      priceChangePercent: 2.5,
+      logoUrl: "https://cryptologos.cc/logos/bitcoin-btc-logo.png",
+    },
+    priceHistory: [
+      { time: '00:00', price: 64000 },
+      { time: '04:00', price: 64500 },
+      { time: '08:00', price: 65200 },
+      { time: '12:00', price: 64800 },
+      { time: '16:00', price: 65500 },
+      { time: '20:00', price: 65000 },
+    ]
   });
+
+  const [exchangeRate, setExchangeRate] = useState(1300); // USD to KRW
+  const [depositAmount, setDepositAmount] = useState('');
+  const [withdrawAmount, setWithdrawAmount] = useState('');
 
   const [isLoading, setIsLoading] = useState(false);
 
@@ -71,6 +102,8 @@ function DetailPage() {
           riskLevel: data.riskLevel,
           expectedReturn: data.expectedReturn,
           availableAmount: data.availableAmount,
+          coinInfo: data.coinInfo,
+          priceHistory: data.priceHistory,
         });
       } catch (error) {
         console.error("투자 데이터를 가져오는데 실패했습니다:", error);
@@ -108,6 +141,31 @@ function DetailPage() {
     return levels[level] || levels[1];
   };
 
+  // 천 단위 구분 기호 적용 함수
+  const formatAmount = (value) => {
+    if (!value) return '';
+    // 숫자만 추출
+    const numbers = value.replace(/[^0-9]/g, '');
+    // 천 단위 구분 기호 적용
+    return numbers.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  };
+
+  // 숫자와 천 단위 구분 기호만 허용하는 함수
+  const handleAmountChange = (e, setAmount) => {
+    const value = e.target.value;
+    // 숫자와 콤마만 허용
+    if (/^[0-9,]*$/.test(value)) {
+      setAmount(value.replace(/,/g, '')); // 저장할 때는 콤마 제거
+    }
+  };
+
+  // USD 변환 계산 함수
+  const calculateUSD = (amount) => {
+    if (!amount) return '0.00';
+    const numericAmount = parseInt(amount.replace(/,/g, ''));
+    return (numericAmount / exchangeRate).toFixed(2);
+  };
+
   return (
     <Container maxW="1200px" px={6} py={10}>
       <VStack spacing={8} align="stretch">
@@ -132,7 +190,7 @@ function DetailPage() {
             <VStack spacing={6}>
               <Heading as="h1" fontSize="2xl" color="green.800">
                 투자봇 상세 정보
-              </Heading>
+      </Heading>
               <Text color="green.600" fontSize="lg" fontWeight="medium">
                 #{investmentId}
               </Text>
@@ -140,8 +198,8 @@ function DetailPage() {
           </CardBody>
         </Card>
 
-        {isLoading ? (
-          <Box display="flex" justifyContent="center" py={10}>
+      {isLoading ? (
+        <Box display="flex" justifyContent="center" py={10}>
             <Spinner 
               size="xl" 
               thickness="4px" 
@@ -149,9 +207,10 @@ function DetailPage() {
               emptyColor="green.100"
               speed="0.8s"
             />
-          </Box>
-        ) : (
-          <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={6}>
+        </Box>
+      ) : (
+          <>
+            {/* 코인 정보 카드 */}
             <Card
               bg={useColorModeValue('white', 'gray.800')}
               border="1px"
@@ -162,171 +221,247 @@ function DetailPage() {
               _hover={{ transform: 'translateY(-2px)', shadow: 'lg' }}
             >
               <CardBody>
-                <Stat>
-                  <StatLabel color="green.600" fontSize="sm">시작일</StatLabel>
-                  <StatNumber fontSize="2xl" color="green.800" mt={2}>
-                    {investmentData.startDate}
-                  </StatNumber>
-                  <StatHelpText color="green.500" fontSize="sm">
-                    투자 시작 시점
-                  </StatHelpText>
-                </Stat>
-              </CardBody>
-            </Card>
-
-            <Card
-              bg={useColorModeValue('white', 'gray.800')}
-              border="1px"
-              borderColor="green.100"
-              borderRadius="xl"
-              overflow="hidden"
-              transition="all 0.3s"
-              _hover={{ transform: 'translateY(-2px)', shadow: 'lg' }}
-            >
-              <CardBody>
-                <Stat>
-                  <StatLabel color="green.600" fontSize="sm">성장 기간</StatLabel>
-                  <StatNumber fontSize="2xl" color="green.800" mt={2}>
-                    {investmentData.duration}
-                    <Text as="span" fontSize="lg" ml={1}>일</Text>
-                  </StatNumber>
-                  <StatHelpText color="green.500" fontSize="sm">
-                    투자 진행 기간
-                  </StatHelpText>
-                </Stat>
-              </CardBody>
-            </Card>
-
-            <Card
-              bg={getRiskLevelInfo(investmentData.riskLevel).gradient}
-              border="1px"
-              borderColor={getRiskLevelInfo(investmentData.riskLevel).color}
-              borderRadius="xl"
-              overflow="hidden"
-              transition="all 0.3s"
-              _hover={{ transform: 'translateY(-2px)', shadow: 'lg' }}
-            >
-              <CardBody>
-                <VStack align="stretch" spacing={4}>
-                  <HStack justify="space-between">
-                    <Text color="gray.700" fontWeight="medium">투자 강도</Text>
-                    <Badge
-                      px={3}
-                      py={1}
-                      borderRadius="full"
-                      colorScheme={
-                        investmentData.riskLevel === 3 ? 'red' :
-                        investmentData.riskLevel === 2 ? 'orange' : 'green'
-                      }
-                      fontSize="sm"
-                    >
-                      {getRiskLevelInfo(investmentData.riskLevel).label}
-                    </Badge>
-                  </HStack>
-                  <Box position="relative" w="100%">
-                    <Box
-                      w="100%"
-                      h="8px"
-                      bg="whiteAlpha.800"
-                      borderRadius="full"
-                      overflow="hidden"
-                    >
-                      <Box
-                        h="100%"
-                        w={`${(investmentData.riskLevel / 3) * 100}%`}
-                        bg={getRiskLevelInfo(investmentData.riskLevel).color}
+                <HStack spacing={6} align="center">
+                  <Image
+                    src={investmentData.coinInfo.logoUrl}
+                    alt={investmentData.coinInfo.symbol}
+                    boxSize="48px"
+                  />
+                  <VStack align="start" flex={1}>
+                    <HStack>
+                      <Text fontSize="2xl" fontWeight="bold">
+                        {investmentData.coinInfo.name}
+                      </Text>
+                      <Text color="gray.500">
+                        {investmentData.coinInfo.symbol}
+                      </Text>
+                    </HStack>
+                    <HStack spacing={4}>
+                      <Text fontSize="xl" fontWeight="semibold">
+                        ${investmentData.coinInfo.currentPrice.toLocaleString()}
+                      </Text>
+                      <Badge
+                        colorScheme={investmentData.coinInfo.priceChangePercent >= 0 ? 'green' : 'red'}
+                        fontSize="sm"
                         borderRadius="full"
-                        transition="all 0.3s"
-                      />
-                    </Box>
-                    <Text mt={2} fontSize="sm" color="gray.600">
-                      {getRiskLevelInfo(investmentData.riskLevel).description}
-                    </Text>
-                  </Box>
-                </VStack>
+                        px={2}
+                      >
+                        {investmentData.coinInfo.priceChangePercent >= 0 ? '+' : ''}
+                        {investmentData.coinInfo.priceChangePercent}%
+                      </Badge>
+                    </HStack>
+                  </VStack>
+                </HStack>
               </CardBody>
             </Card>
 
+            {/* 가격 차트 */}
             <Card
-              bg="green.50"
-              border="1px"
-              borderColor="green.200"
-              borderRadius="xl"
-              overflow="hidden"
-              transition="all 0.3s"
-              _hover={{ transform: 'translateY(-2px)', shadow: 'lg' }}
-            >
-              <CardBody>
-                <Stat>
-                  <StatLabel color="green.700">예상 성장률</StatLabel>
-                  <HStack align="baseline" mt={2}>
-                    <StatNumber fontSize="3xl" color="green.600">
-                      {investmentData.expectedReturn}
-                    </StatNumber>
-                    <Text color="green.600" fontSize="xl">%</Text>
-                  </HStack>
-                  <StatHelpText color="green.600">
-                    연간 예상 수익
-                  </StatHelpText>
-                </Stat>
-              </CardBody>
-            </Card>
-
-            <Card
-              bg="white"
+              bg={useColorModeValue('white', 'gray.800')}
               border="1px"
               borderColor="green.100"
               borderRadius="xl"
               overflow="hidden"
-              transition="all 0.3s"
-              _hover={{ transform: 'translateY(-2px)', shadow: 'lg' }}
+              h="300px"
             >
               <CardBody>
-                <Stat>
-                  <StatLabel color="green.700">수확 가능 금액</StatLabel>
-                  <HStack align="baseline" mt={2}>
-                    <StatNumber fontSize="3xl" color="green.600">
-                      {investmentData.availableAmount.toLocaleString()}
-                    </StatNumber>
-                    <Text color="green.600" fontSize="xl">원</Text>
-                  </HStack>
-                  <StatHelpText color="green.600">
-                    현재 출금 가능
-                  </StatHelpText>
-                </Stat>
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart
+                    data={investmentData.priceHistory}
+                    margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="time" />
+                    <YAxis />
+                    <RechartsTooltip />
+                    <Area
+                      type="monotone"
+                      dataKey="price"
+                      stroke="#38A169"
+                      fill="#38A16933"
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
               </CardBody>
             </Card>
-          </SimpleGrid>
+
+            <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={6}>
+              <Card
+                bg={useColorModeValue('white', 'gray.800')}
+                border="1px"
+                borderColor="green.100"
+                borderRadius="xl"
+                overflow="hidden"
+                transition="all 0.3s"
+                _hover={{ transform: 'translateY(-2px)', shadow: 'lg' }}
+              >
+                <CardBody>
+                  <Stat>
+                    <StatLabel color="green.600" fontSize="sm">시작일</StatLabel>
+                    <StatNumber fontSize="2xl" color="green.800" mt={2}>
+                      {investmentData.startDate}
+                    </StatNumber>
+                    <StatHelpText color="green.500" fontSize="sm">
+                      투자 시작 시점
+                    </StatHelpText>
+                  </Stat>
+                </CardBody>
+              </Card>
+
+              <Card
+                bg={useColorModeValue('white', 'gray.800')}
+                border="1px"
+                borderColor="green.100"
+                borderRadius="xl"
+                overflow="hidden"
+                transition="all 0.3s"
+                _hover={{ transform: 'translateY(-2px)', shadow: 'lg' }}
+              >
+                <CardBody>
+                  <Stat>
+                    <StatLabel color="green.600" fontSize="sm">성장 기간</StatLabel>
+                    <StatNumber fontSize="2xl" color="green.800" mt={2}>
+                      {investmentData.duration}
+                      <Text as="span" fontSize="lg" ml={1}>일</Text>
+                    </StatNumber>
+                    <StatHelpText color="green.500" fontSize="sm">
+                      투자 진행 기간
+                    </StatHelpText>
+                  </Stat>
+                </CardBody>
+              </Card>
+
+              <Card
+                bg={getRiskLevelInfo(investmentData.riskLevel).gradient}
+                border="1px"
+                borderColor={getRiskLevelInfo(investmentData.riskLevel).color}
+                borderRadius="xl"
+                overflow="hidden"
+                transition="all 0.3s"
+                _hover={{ transform: 'translateY(-2px)', shadow: 'lg' }}
+              >
+                <CardBody>
+                  <VStack align="stretch" spacing={4}>
+                    <HStack justify="space-between">
+                      <Text color="gray.700" fontWeight="medium">투자 강도</Text>
+                      <Badge
+                        px={3}
+                        py={1}
+                        borderRadius="full"
+                        colorScheme={
+                          investmentData.riskLevel === 3 ? 'red' :
+                          investmentData.riskLevel === 2 ? 'orange' : 'green'
+                        }
+                        fontSize="sm"
+                      >
+                        {getRiskLevelInfo(investmentData.riskLevel).label}
+                      </Badge>
+                    </HStack>
+                    <Box position="relative" w="100%">
+                      <Box
+                        w="100%"
+                        h="8px"
+                        bg="whiteAlpha.800"
+                        borderRadius="full"
+                        overflow="hidden"
+                      >
+                        <Box
+                          h="100%"
+                          w={`${(investmentData.riskLevel / 3) * 100}%`}
+                          bg={getRiskLevelInfo(investmentData.riskLevel).color}
+                          borderRadius="full"
+                          transition="all 0.3s"
+                        />
+                      </Box>
+                      <Text mt={2} fontSize="sm" color="gray.600">
+                        {getRiskLevelInfo(investmentData.riskLevel).description}
+                      </Text>
+                </Box>
+                  </VStack>
+                </CardBody>
+              </Card>
+
+              <Card
+                bg="green.50"
+                border="1px"
+                borderColor="green.200"
+                borderRadius="xl"
+                overflow="hidden"
+                transition="all 0.3s"
+                _hover={{ transform: 'translateY(-2px)', shadow: 'lg' }}
+              >
+                <CardBody>
+                  <Stat>
+                    <StatLabel color="green.700">예상 성장률</StatLabel>
+                    <HStack align="baseline" mt={2}>
+                      <StatNumber fontSize="3xl" color="green.600">
+                        {investmentData.expectedReturn}
+                      </StatNumber>
+                      <Text color="green.600" fontSize="xl">%</Text>
+                    </HStack>
+                    <StatHelpText color="green.600">
+                      연간 예상 수익
+                    </StatHelpText>
+                  </Stat>
+                </CardBody>
+              </Card>
+
+              <Card
+                bg="white"
+                border="1px"
+                borderColor="green.100"
+                borderRadius="xl"
+                overflow="hidden"
+                transition="all 0.3s"
+                _hover={{ transform: 'translateY(-2px)', shadow: 'lg' }}
+              >
+                <CardBody>
+                  <Stat>
+                    <StatLabel color="green.700">수확 가능 금액</StatLabel>
+                    <HStack align="baseline" mt={2}>
+                      <StatNumber fontSize="3xl" color="green.600">
+                        {investmentData.availableAmount.toLocaleString()}
+                      </StatNumber>
+                      <Text color="green.600" fontSize="xl">원</Text>
+                    </HStack>
+                    <StatHelpText color="green.600">
+                      현재 출금 가능
+                    </StatHelpText>
+                  </Stat>
+                </CardBody>
+              </Card>
+            </SimpleGrid>
+          </>
         )}
 
         <HStack spacing={4} justify="center" mt={8}>
-          <Button
+        <Button
             bg="green.500"
             color="white"
-            size="lg"
+          size="lg"
             px={8}
             borderRadius="full"
             leftIcon={<Box as="span" fontSize="1.2em">🌱</Box>}
-            onClick={onDepositOpen}
+          onClick={onDepositOpen}
             _hover={{ bg: 'green.600', transform: 'translateY(-2px)' }}
             transition="all 0.2s"
-          >
+        >
             씨앗 심기
-          </Button>
-          <Button
+        </Button>
+        <Button
             bg="orange.500"
             color="white"
-            size="lg"
+          size="lg"
             px={8}
             borderRadius="full"
             leftIcon={<Box as="span" fontSize="1.2em">🌾</Box>}
-            onClick={onWithdrawOpen}
+          onClick={onWithdrawOpen}
             _hover={{ bg: 'orange.600', transform: 'translateY(-2px)' }}
             transition="all 0.2s"
           >
             수확하기
-          </Button>
-        </HStack>
+        </Button>
+      </HStack>
       </VStack>
 
       {/* 입금 모달 */}
@@ -351,21 +486,39 @@ function DetailPage() {
           <ModalBody py={6}>
             <VStack spacing={4}>
               <Text color="green.600">투자할 금액을 입력해주세요</Text>
-              <Input 
-                placeholder="금액을 입력하세요" 
-                type="number" 
-                size="lg"
-                textAlign="right"
-                borderRadius="xl"
-                borderColor="green.200"
-                _focus={{
-                  borderColor: "green.400",
-                  boxShadow: "0 0 0 1px var(--chakra-colors-green-400)"
-                }}
-                _hover={{
-                  borderColor: "green.300"
-                }}
-              />
+              <VStack width="100%" spacing={1} align="stretch">
+                <InputGroup size="lg">
+                  <Input 
+                    placeholder="0"
+                    value={formatAmount(depositAmount)}
+                    onChange={(e) => handleAmountChange(e, setDepositAmount)}
+                    textAlign="right"
+                    borderRadius="xl"
+                    borderColor="green.200"
+                    pr="4.5rem"
+                    _focus={{
+                      borderColor: "green.400",
+                      boxShadow: "0 0 0 1px var(--chakra-colors-green-400)"
+                    }}
+                    _hover={{
+                      borderColor: "green.300"
+                    }}
+                  />
+                  <InputRightAddon 
+                    children="KRW" 
+                    bg="green.50" 
+                    borderColor="green.200"
+                    borderLeftWidth="0"
+                    roundedRight="xl"
+                  />
+                </InputGroup>
+                <HStack justify="space-between" px={2}>
+                  <Text fontSize="sm" color="gray.500">예상 USD</Text>
+                  <Text fontSize="sm" color="gray.500">
+                    ≈ ${calculateUSD(depositAmount)}
+                  </Text>
+                </HStack>
+              </VStack>
             </VStack>
           </ModalBody>
           <ModalFooter 
@@ -387,8 +540,9 @@ function DetailPage() {
               color="white" 
               _hover={{ bg: 'green.600' }}
               borderRadius="xl"
+              isDisabled={!depositAmount}
             >
-              심기
+              {depositAmount ? `${formatAmount(depositAmount)} KRW 심기` : '심기'}
             </Button>
           </ModalFooter>
         </ModalContent>
@@ -416,21 +570,39 @@ function DetailPage() {
           <ModalBody py={6}>
             <VStack spacing={4}>
               <Text color="orange.600">출금할 금액을 입력해주세요</Text>
-              <Input 
-                placeholder="금액을 입력하세요" 
-                type="number" 
-                size="lg"
-                textAlign="right"
-                borderRadius="xl"
-                borderColor="orange.200"
-                _focus={{
-                  borderColor: "orange.400",
-                  boxShadow: "0 0 0 1px var(--chakra-colors-orange-400)"
-                }}
-                _hover={{
-                  borderColor: "orange.300"
-                }}
-              />
+              <VStack width="100%" spacing={1} align="stretch">
+                <InputGroup size="lg">
+                  <Input 
+                    placeholder="0"
+                    value={formatAmount(withdrawAmount)}
+                    onChange={(e) => handleAmountChange(e, setWithdrawAmount)}
+                    textAlign="right"
+                    borderRadius="xl"
+                    borderColor="orange.200"
+                    pr="4.5rem"
+                    _focus={{
+                      borderColor: "orange.400",
+                      boxShadow: "0 0 0 1px var(--chakra-colors-orange-400)"
+                    }}
+                    _hover={{
+                      borderColor: "orange.300"
+                    }}
+                  />
+                  <InputRightAddon 
+                    children="KRW" 
+                    bg="orange.50" 
+                    borderColor="orange.200"
+                    borderLeftWidth="0"
+                    roundedRight="xl"
+                  />
+                </InputGroup>
+                <HStack justify="space-between" px={2}>
+                  <Text fontSize="sm" color="gray.500">예상 USD</Text>
+                  <Text fontSize="sm" color="gray.500">
+                    ≈ ${calculateUSD(withdrawAmount)}
+                  </Text>
+                </HStack>
+              </VStack>
             </VStack>
           </ModalBody>
           <ModalFooter 
@@ -452,8 +624,9 @@ function DetailPage() {
               color="white" 
               _hover={{ bg: 'orange.600' }}
               borderRadius="xl"
+              isDisabled={!withdrawAmount}
             >
-              수확하기
+              {withdrawAmount ? `${formatAmount(withdrawAmount)} KRW 수확` : '수확하기'}
             </Button>
           </ModalFooter>
         </ModalContent>
