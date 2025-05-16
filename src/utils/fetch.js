@@ -12,6 +12,13 @@ export const customFetch = async (url, options = {}) => {
 
         clearTimeout(timeoutId);
 
+        if (response.status === 401) {
+            // 401 에러 발생 시 로그인 페이지로 리다이렉트
+            localStorage.removeItem('access_token');
+            window.location.href = '/login';
+            throw new Error('인증이 필요합니다. 다시 로그인해주세요.');
+        }
+
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }

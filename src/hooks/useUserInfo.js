@@ -9,9 +9,15 @@ export const useUserInfo = () => {
 
     const fetchUserInfo = async () => {
         try {
+            // 토큰을 가져오는 시점을 100ms 지연시킵니다
+            await new Promise(resolve => setTimeout(resolve, 100));
+
             const token = localStorage.getItem('access_token');
             if (!token) {
-                throw new Error('No token found');
+                // Refresh page
+                console.log("No token found");
+                return;
+                // window.location.reload();
             }
 
             const response = await customFetch(`${config.hostname}/auth/info`, {
