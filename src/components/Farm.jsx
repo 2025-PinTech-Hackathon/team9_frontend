@@ -8,6 +8,7 @@ import React, {
 import { useNavigate } from "react-router-dom";
 import grassTexture from "../assets/farm/grass1.png";
 import bigTreeImage from "../assets/farm/big_tree.png";
+import { motion, AnimatePresence } from "framer-motion";
 
 const TILE_WIDTH = 120;
 const TILE_HEIGHT = 120;
@@ -37,9 +38,12 @@ const tileLefts = positions.map(
 const dropMinX = Math.min(...tileLefts);
 const dropMaxX = Math.max(...tileLefts) + TILE_WIDTH * 1.5;
 
+// 호버 효과 애니메이션 시간 상수 정의
+const HOVER_ANIMATION_DURATION = 0.2;
+
 // Ground: 잔디 타일
 const Ground = memo(({ x, y, onClick, isHovered, hoveredTileExists, onMouseEnter, onMouseLeave }) => (
-    <div
+    <motion.div
         style={{
             position: "absolute",
             left: x,
@@ -47,9 +51,14 @@ const Ground = memo(({ x, y, onClick, isHovered, hoveredTileExists, onMouseEnter
             width: TILE_WIDTH * 1.5,
             height: TILE_HEIGHT,
             cursor: "pointer",
-            transition: "transform 0.2s ease",
-            transform: isHovered ? 'translateY(-10px)' : 'translateY(0)',
             zIndex: isHovered ? 2 : 1,
+        }}
+        animate={{
+            y: isHovered ? -10 : 0
+        }}
+        transition={{
+            duration: HOVER_ANIMATION_DURATION,
+            ease: "easeOut"
         }}
         onClick={onClick}
         onMouseEnter={onMouseEnter}
@@ -62,11 +71,11 @@ const Ground = memo(({ x, y, onClick, isHovered, hoveredTileExists, onMouseEnter
                 width: "100%",
                 height: "100%",
                 userSelect: "none",
-                transition: "opacity 0.2s ease",
+                transition: `opacity ${HOVER_ANIMATION_DURATION}s ease`,
                 opacity: hoveredTileExists && !isHovered ? 0.5 : 1,
             }}
         />
-    </div>
+    </motion.div>
 ));
 
 // WaterDrop: 물방울 애니메이션
@@ -113,6 +122,12 @@ const Farm = ({ investments = [] }) => {
     const [waterDrops, setWaterDrops] = useState([]);
     const [isWatering, setIsWatering] = useState(false);
     const [hoveredTileId, setHoveredTileId] = useState(null);
+    const [selectedTileId, setSelectedTileId] = useState(null);
+    const [isTransitioning, setIsTransitioning] = useState(false);
+    const [isInitialAnimationDone, setIsInitialAnimationDone] = useState(false);
+
+    // 타일 등장 순서 정의
+    const tileOrder = [1, 2, 4, 3, 5, 7, 6, 8, 9];
 
     useEffect(() => {
         const updateScale = () => {
@@ -127,6 +142,25 @@ const Farm = ({ investments = [] }) => {
         return () => window.removeEventListener("resize", updateScale);
     }, []);
 
+    useEffect(() => {
+        // 컴포넌트 마운트 시 애니메이션 상태 초기화
+        setSelectedTileId(null);
+        setIsTransitioning(false);
+        
+        // 일정 시간 후에 초기 애니메이션 완료 상태로 변경
+        const timer = setTimeout(() => {
+            setIsInitialAnimationDone(true);
+        }, tileOrder.length * 200 + 500); // 각 타일당 200ms + 여유 시간
+
+        return () => clearTimeout(timer);
+    }, []);
+
+    // 타일의 등장 순서에 따른 딜레이 계산
+    const getAnimationDelay = (id) => {
+        const index = tileOrder.indexOf(id);
+        return index * 0.2; // 각 타일 사이 200ms 간격
+    };
+
     const handleTileClick = useCallback(
         (id) => {
             console.log("tile clicked:", id);
@@ -134,7 +168,11 @@ const Farm = ({ investments = [] }) => {
             if (hasInvestment) {
                 navigate(`/main/detail?id=${id}`);
             } else {
-                navigate(`/main/create?id=${id}`);
+                setSelectedTileId(id);
+                setIsTransitioning(true);
+                setTimeout(() => {
+                    navigate(`/main/create?id=${id}`);
+                }, 500);
             }
         },
         [navigate, investments]
@@ -175,7 +213,7 @@ const Farm = ({ investments = [] }) => {
                 overflow: "hidden",
             }}
         >
-            <div
+            <motion.div
                 style={{
                     width: BASE_WIDTH,
                     height: BASE_HEIGHT,
@@ -183,19 +221,43 @@ const Farm = ({ investments = [] }) => {
                     transformOrigin: "top left",
                     position: "relative",
                 }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.5, delay: 0.2 }}
             >
                 {/* 땅(타일) 그리기 */}
                 {positions.map((p) => (
-                    <Ground
+                    <motion.div
                         key={p.id}
-                        x={p.x - TILE_WIDTH / 2 + absXOffset}
-                        y={p.y - TILE_HEIGHT / 2 + absYOffset}
-                        onClick={() => handleTileClick(p.id)}
-                        isHovered={hoveredTileId === p.id}
-                        hoveredTileExists={hoveredTileId !== null}
-                        onMouseEnter={() => handleMouseEnter(p.id)}
-                        onMouseLeave={handleMouseLeave}
-                    />
+                        initial={{
+                            opacity: 0,
+                            y: -50
+                        }}
+                        animate={{
+                            opacity: selectedTileId ? (p.id === selectedTileId ? 1 : 0) : 1,
+                            scale: selectedTileId && p.id === selectedTileId ? 1.1 : 1,
+                            y: selectedTileId && p.id === selectedTileId ? -20 : 0
+                        }}
+                        transition={{
+                            duration: 0.5,
+                            delay: isInitialAnimationDone ? 0 : getAnimationDelay(p.id),
+                            ease: "easeOut"
+                        }}
+                        style={{
+                            position: "relative",
+                            zIndex: hoveredTileId === p.id ? 2 : 1
+                        }}
+                    >
+                        <Ground
+                            x={p.x - TILE_WIDTH / 2 + absXOffset}
+                            y={p.y - TILE_HEIGHT / 2 + absYOffset}
+                            onClick={() => handleTileClick(p.id)}
+                            isHovered={hoveredTileId === p.id}
+                            hoveredTileExists={hoveredTileId !== null}
+                            onMouseEnter={() => handleMouseEnter(p.id)}
+                            onMouseLeave={handleMouseLeave}
+                        />
+                    </motion.div>
                 ))}
 
                 {/* 투자 위치에 나무 표시 */}
@@ -203,24 +265,48 @@ const Farm = ({ investments = [] }) => {
                     const position = positions.find(p => p.id === investment.internal_position);
                     if (!position) return null;
                     
+                    const isHovered = hoveredTileId === investment.internal_position;
+                    
                     return (
-                        <img
+                        <motion.div
                             key={investment.id}
-                            src={bigTreeImage}
-                            alt="Investment Tree"
-                            style={{
-                                position: "absolute",
-                                left: position.x - TILE_WIDTH / 2 + absTreeXOffset,
-                                top: position.y - TILE_HEIGHT / 2 + absTreeYOffset,
-                                width: TILE_WIDTH * 1.5,
-                                height: TILE_HEIGHT * 1.4,
-                                pointerEvents: "none",
-                                zIndex: 3,
-                                opacity: hoveredTileId !== null && hoveredTileId !== investment.internal_position ? 0.5 : 1,
-                                transition: "all 0.2s ease",
-                                transform: hoveredTileId === investment.internal_position ? 'translateY(-10px)' : 'translateY(0)',
+                            initial={{
+                                opacity: 0,
+                                y: -50
                             }}
-                        />
+                            animate={{
+                                opacity: selectedTileId ? 0 : 1,
+                                y: isHovered ? -10 : 0
+                            }}
+                            transition={{
+                                duration: HOVER_ANIMATION_DURATION,
+                                ease: "easeOut"
+                            }}
+                            style={{
+                                position: "relative",
+                                zIndex: 3
+                            }}
+                        >
+                            <motion.img
+                                src={bigTreeImage}
+                                alt="Investment Tree"
+                                animate={{
+                                    opacity: hoveredTileId !== null && !isHovered ? 0.5 : 1
+                                }}
+                                transition={{
+                                    duration: HOVER_ANIMATION_DURATION,
+                                    ease: "easeOut"
+                                }}
+                                style={{
+                                    position: "absolute",
+                                    left: position.x - TILE_WIDTH / 2 + absTreeXOffset,
+                                    top: position.y - TILE_HEIGHT / 2 + absTreeYOffset,
+                                    width: TILE_WIDTH * 1.5,
+                                    height: TILE_HEIGHT * 1.4,
+                                    pointerEvents: "none",
+                                }}
+                            />
+                        </motion.div>
                     );
                 })}
 
@@ -252,7 +338,7 @@ const Farm = ({ investments = [] }) => {
                 >
                     💧
                 </button>
-            </div>
+            </motion.div>
         </div>
     );
 };

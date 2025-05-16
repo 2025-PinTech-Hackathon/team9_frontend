@@ -30,6 +30,7 @@ import {
   import { customFetch } from "../utils/fetch";
   import config from "../../config.json";
   import { useUser } from "../contexts/UserContext";
+  import { motion, AnimatePresence } from "framer-motion";
   
   function CreateInvestPage()  {
     const canvasRef = useRef(null);
@@ -39,6 +40,7 @@ import {
     const [isLoading, setIsLoading] = useState(false);
     const navigate = useNavigate();
     const { refetch } = useUser();
+    const containerRef = useRef(null);
 
     const [investmentData, setInvestmentData] = useState({
       name: "",
@@ -48,8 +50,17 @@ import {
     });
   
     useEffect(() => {
+      const handleClickOutside = (event) => {
+        if (containerRef.current && !containerRef.current.contains(event.target)) {
+          navigate("/main");
+        }
+      };
 
-    }, []);
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => {
+        document.removeEventListener("mousedown", handleClickOutside);
+      };
+    }, [navigate]);
   
     const handleCreateInvestment = async () => {
       try {
@@ -107,87 +118,100 @@ import {
   
     return (
       <Container maxW="1024px" px={4} py={8}>
-        <Heading as="h1" mb={8} textAlign="center">
-          새로운 투자 생성
-        </Heading>
-
-        <Box
-          maxW="600px"
-          mx="auto"
-          p={10}
-          borderWidth="1px"
-          borderRadius="lg"
-          boxShadow="lg"
-          bg="white"
-          mb={8}
-          minH="500px"
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.3 }}
         >
-          <VStack spacing={4} align="stretch">
-            <FormControl isRequired>
-              <FormLabel>투자 이름</FormLabel>
-              <Input 
-                placeholder="투자 이름을 입력하세요" 
-                value={investmentData.name || ''}
-                onChange={(e) => setInvestmentData(prev => ({...prev, name: e.target.value}))}
-              />
-            </FormControl>
+          <Heading as="h1" mb={8} textAlign="center">
+            새로운 투자 생성
+          </Heading>
 
-            <FormControl isRequired>
-              <FormLabel>코인 종류</FormLabel>
-              <Select 
-                placeholder="코인을 선택하세요"
-                value={investmentData.coinType || ''}
-                onChange={(e) => setInvestmentData(prev => ({...prev, coinType: e.target.value}))}
-              >
-                <option value="BTC">Bitcoin (BTC)</option>
-                <option value="ETH">Ethereum (ETH)</option>
-                <option value="SOL">Solana (SOL)</option>
-              </Select>
-            </FormControl>
-
-            <FormControl isRequired>
-              <FormLabel>초기 투자 금액</FormLabel>
-              <Input 
-                type="number" 
-                placeholder="초기 투자 금액을 입력하세요"
-                value={investmentData.initialAmount || ''}
-                onChange={(e) => setInvestmentData(prev => ({...prev, initialAmount: parseFloat(e.target.value)}))}
-              />
-            </FormControl>
-
-            <FormControl isRequired>
-              <FormLabel>투자 성향</FormLabel>
-              <RadioGroup
-                value={investmentData.riskLevel}
-                onChange={(value) => setInvestmentData(prev => ({...prev, riskLevel: value}))}
-              >
-                <Stack direction="row" spacing={6} justify="center">
-                  <Tooltip label="안정적인 수익을 추구하는 보수적인 투자 전략" placement="top">
-                    <Radio value="low" colorScheme="green">안정</Radio>
-                  </Tooltip>
-                  <Tooltip label="적정한 위험과 수익을 추구하는 균형잡힌 투자 전략" placement="top">
-                    <Radio value="medium" colorScheme="blue">보통</Radio>
-                  </Tooltip>
-                  <Tooltip label="높은 수익을 추구하는 공격적인 투자 전략" placement="top">
-                    <Radio value="high" colorScheme="red">위험</Radio>
-                  </Tooltip>
-                </Stack>
-              </RadioGroup>
-            </FormControl>
-
-            <Button 
-              colorScheme="blue" 
-              size="lg" 
-              width="100%"
-              mt={4}
-              isLoading={isLoading}
-              onClick={handleCreateInvestment}
+          <motion.div
+            ref={containerRef}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2, duration: 0.5 }}
+          >
+            <Box
+              maxW="600px"
+              mx="auto"
+              p={10}
+              borderWidth="1px"
+              borderRadius="lg"
+              boxShadow="lg"
+              bg="white"
+              mb={8}
+              minH="500px"
             >
-              투자 생성하기
-            </Button>
-          </VStack>
-        </Box>
-        
+              <VStack spacing={4} align="stretch">
+                <FormControl isRequired>
+                  <FormLabel>투자 이름</FormLabel>
+                  <Input 
+                    placeholder="투자 이름을 입력하세요" 
+                    value={investmentData.name || ''}
+                    onChange={(e) => setInvestmentData(prev => ({...prev, name: e.target.value}))}
+                  />
+                </FormControl>
+
+                <FormControl isRequired>
+                  <FormLabel>코인 종류</FormLabel>
+                  <Select 
+                    placeholder="코인을 선택하세요"
+                    value={investmentData.coinType || ''}
+                    onChange={(e) => setInvestmentData(prev => ({...prev, coinType: e.target.value}))}
+                  >
+                    <option value="BTC">Bitcoin (BTC)</option>
+                    <option value="ETH">Ethereum (ETH)</option>
+                    <option value="SOL">Solana (SOL)</option>
+                  </Select>
+                </FormControl>
+
+                <FormControl isRequired>
+                  <FormLabel>초기 투자 금액</FormLabel>
+                  <Input 
+                    type="number" 
+                    placeholder="초기 투자 금액을 입력하세요"
+                    value={investmentData.initialAmount || ''}
+                    onChange={(e) => setInvestmentData(prev => ({...prev, initialAmount: parseFloat(e.target.value)}))}
+                  />
+                </FormControl>
+
+                <FormControl isRequired>
+                  <FormLabel>투자 성향</FormLabel>
+                  <RadioGroup
+                    value={investmentData.riskLevel}
+                    onChange={(value) => setInvestmentData(prev => ({...prev, riskLevel: value}))}
+                  >
+                    <Stack direction="row" spacing={6} justify="center">
+                      <Tooltip label="안정적인 수익을 추구하는 보수적인 투자 전략" placement="top">
+                        <Radio value="low" colorScheme="green">안정</Radio>
+                      </Tooltip>
+                      <Tooltip label="적정한 위험과 수익을 추구하는 균형잡힌 투자 전략" placement="top">
+                        <Radio value="medium" colorScheme="blue">보통</Radio>
+                      </Tooltip>
+                      <Tooltip label="높은 수익을 추구하는 공격적인 투자 전략" placement="top">
+                        <Radio value="high" colorScheme="red">위험</Radio>
+                      </Tooltip>
+                    </Stack>
+                  </RadioGroup>
+                </FormControl>
+
+                <Button 
+                  colorScheme="blue" 
+                  size="lg" 
+                  width="100%"
+                  mt={4}
+                  isLoading={isLoading}
+                  onClick={handleCreateInvestment}
+                >
+                  투자 생성하기
+                </Button>
+              </VStack>
+            </Box>
+          </motion.div>
+        </motion.div>
       </Container>
     );
   }
