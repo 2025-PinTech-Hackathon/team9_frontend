@@ -37,9 +37,8 @@ const tileLefts = positions.map(
 const dropMinX = Math.min(...tileLefts);
 const dropMaxX = Math.max(...tileLefts) + TILE_WIDTH * 1.5;
 
-
 // Ground: 잔디 타일
-const Ground = memo(({ x, y, onClick }) => (
+const Ground = memo(({ x, y, onClick, isHovered, hoveredTileExists, onMouseEnter, onMouseLeave }) => (
     <img
         src={grassTexture}
         alt=""
@@ -51,8 +50,14 @@ const Ground = memo(({ x, y, onClick }) => (
             height: TILE_HEIGHT,
             cursor: "pointer",
             userSelect: "none",
+            transition: "all 0.3s ease",
+            opacity: hoveredTileExists && !isHovered ? 0.5 : 1,
+            transform: isHovered ? 'translateY(-10px)' : 'translateY(0)',
+            zIndex: isHovered ? 2 : 1,
         }}
         onClick={onClick}
+        onMouseEnter={onMouseEnter}
+        onMouseLeave={onMouseLeave}
     />
 ));
 
@@ -99,6 +104,7 @@ const Farm = ({ investments = [] }) => {
     const [scale, setScale] = useState(1);
     const [waterDrops, setWaterDrops] = useState([]);
     const [isWatering, setIsWatering] = useState(false);
+    const [hoveredTileId, setHoveredTileId] = useState(null);
 
     useEffect(() => {
         const updateScale = () => {
@@ -138,6 +144,14 @@ const Farm = ({ investments = [] }) => {
         setWaterDrops((prev) => prev.filter((d) => d.id !== id));
     }, []);
 
+    const handleMouseEnter = useCallback((id) => {
+        setHoveredTileId(id);
+    }, []);
+
+    const handleMouseLeave = useCallback(() => {
+        setHoveredTileId(null);
+    }, []);
+
     return (
         <div
             ref={containerRef}
@@ -164,6 +178,10 @@ const Farm = ({ investments = [] }) => {
                         x={p.x - TILE_WIDTH / 2 + absXOffset}
                         y={p.y - TILE_HEIGHT / 2 + absYOffset}
                         onClick={() => handleTileClick(p.id)}
+                        isHovered={hoveredTileId === p.id}
+                        hoveredTileExists={hoveredTileId !== null}
+                        onMouseEnter={() => handleMouseEnter(p.id)}
+                        onMouseLeave={handleMouseLeave}
                     />
                 ))}
 
