@@ -20,6 +20,18 @@ import {
     StatNumber,
     StatHelpText,
     StatArrow,
+    Tooltip,
+    Modal,
+    ModalOverlay,
+    ModalContent,
+    ModalHeader,
+    ModalBody,
+    ModalFooter,
+    Button,
+    Input,
+    InputGroup,
+    InputRightAddon,
+    useDisclosure,
 } from "@chakra-ui/react";
 
 const TILE_WIDTH = 120;
@@ -99,7 +111,7 @@ const EmptyTileTooltip = memo(({ x, y }) => (
 ));
 
 // Ground: 잔디 타일
-const Ground = memo(({ x, y, onClick, isHovered, hoveredTileExists, onMouseEnter, onMouseLeave, hasInvestment }) => (
+const Ground = memo(({ x, y, onClick, isHovered, hoveredTileExists, onMouseEnter, onMouseLeave, hasInvestment, isQuickWatering }) => (
     <motion.div
         style={{
             position: "absolute",
@@ -129,11 +141,11 @@ const Ground = memo(({ x, y, onClick, isHovered, hoveredTileExists, onMouseEnter
                 height: "100%",
                 userSelect: "none",
                 transition: `opacity ${HOVER_ANIMATION_DURATION}s ease`,
-                opacity: hoveredTileExists && !isHovered ? 0.5 : 1,
+                opacity: (!hasInvestment && isQuickWatering) || (hoveredTileExists && !isHovered) ? 0.5 : 1,
             }}
         />
         <AnimatePresence>
-            {isHovered && !hasInvestment && (
+            {isHovered && !hasInvestment && !isQuickWatering && (
                 <EmptyTileTooltip x={TILE_WIDTH * 0.75} y={TILE_HEIGHT * 0.5} />
             )}
         </AnimatePresence>
@@ -308,8 +320,11 @@ const Farm = ({ investments = [] }) => {
     const [isWatering, setIsWatering] = useState(false);
     const [hoveredTileId, setHoveredTileId] = useState(null);
     const [selectedTileId, setSelectedTileId] = useState(null);
-    const [isTransitioning, setIsTransitioning] = useState(false);
     const [isInitialAnimationDone, setIsInitialAnimationDone] = useState(false);
+    const [isQuickWatering, setIsQuickWatering] = useState(false);
+    const [depositAmount, setDepositAmount] = useState('');
+    const { isOpen, onOpen, onClose } = useDisclosure();
+    const [selectedInvestment, setSelectedInvestment] = useState(null);
 
     // 타일 등장 순서 정의
     const tileOrder = [1, 2, 4, 3, 5, 7, 6, 8, 9];
@@ -330,7 +345,7 @@ const Farm = ({ investments = [] }) => {
     useEffect(() => {
         // 컴포넌트 마운트 시 애니메이션 상태 초기화
         setSelectedTileId(null);
-        setIsTransitioning(false);
+        setIsQuickWatering(false);
         
         // 일정 시간 후에 초기 애니메이션 완료 상태로 변경
         const timer = setTimeout(() => {
@@ -346,21 +361,38 @@ const Farm = ({ investments = [] }) => {
         return index * 0.2; // 각 타일 사이 200ms 간격
     };
 
+    const handleQuickWateringClick = () => {
+        setIsQuickWatering(prev => !prev);  // 현재 상태의 반대로 토글
+    };
+
+    const handleBackgroundClick = (e) => {
+        if (e.target === e.currentTarget && isQuickWatering) {
+            setIsQuickWatering(false);
+        }
+    };
+
     const handleTileClick = useCallback(
         (id) => {
-            console.log("tile clicked:", id);
-            const hasInvestment = investments.some(investment => investment.internal_position === id);
-            if (hasInvestment) {
+            const investment = investments.find(inv => inv.internal_position === id);
+            
+            if (isQuickWatering) {
+                if (investment) {
+                    setSelectedInvestment(investment);
+                    onOpen();
+                }
+                return;
+            }
+
+            if (investment) {
                 navigate(`/main/detail?id=${id}`);
             } else {
                 setSelectedTileId(id);
-                setIsTransitioning(true);
                 setTimeout(() => {
                     navigate(`/main/create?id=${id}`);
                 }, 500);
             }
         },
-        [navigate, investments]
+        [navigate, investments, isQuickWatering, onOpen]
     );
 
     const addWaterDrop = useCallback(() => {
@@ -388,6 +420,30 @@ const Farm = ({ investments = [] }) => {
         setHoveredTileId(null);
     }, []);
 
+    // 금액 포맷팅 함수
+    const formatAmount = (value) => {
+        if (!value) return '';
+        const numbers = value.replace(/[^0-9]/g, '');
+        return numbers.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    };
+
+    // 입력 처리 함수
+    const handleAmountChange = (e) => {
+        const value = e.target.value;
+        if (/^[0-9,]*$/.test(value)) {
+            setDepositAmount(value.replace(/,/g, ''));
+        }
+    };
+
+    // 빠른 입금 처리 함수
+    const handleQuickDeposit = async () => {
+        // TODO: API 호출 로직 구현
+        console.log('Quick deposit:', depositAmount, 'to investment:', selectedInvestment);
+        onClose();
+        setIsQuickWatering(false);
+        setDepositAmount('');
+    };
+
     return (
         <div
             ref={containerRef}
@@ -397,6 +453,7 @@ const Farm = ({ investments = [] }) => {
                 position: "relative",
                 overflow: "hidden",
             }}
+            onClick={handleBackgroundClick}
         >
             <motion.div
                 style={{
@@ -417,6 +474,7 @@ const Farm = ({ investments = [] }) => {
                     const investment = investments.find(inv => inv.internal_position === p.id);
                     const isHovered = hoveredTileId === p.id;
                     const delay = isInitialAnimationDone ? 0 : getAnimationDelay(p.id);
+                    const isDisabled = isQuickWatering && !investment;
 
                     return (
                         <React.Fragment key={p.id}>
@@ -438,7 +496,9 @@ const Farm = ({ investments = [] }) => {
                                 }}
                                 style={{
                                     position: "relative",
-                                    zIndex: hoveredTileId === p.id ? 2 : 1
+                                    zIndex: hoveredTileId === p.id ? 2 : 1,
+                                    opacity: isDisabled ? 0.5 : 1,
+                                    pointerEvents: isDisabled ? 'none' : 'auto'
                                 }}
                             >
                                 <Ground
@@ -450,6 +510,7 @@ const Farm = ({ investments = [] }) => {
                                     onMouseEnter={() => handleMouseEnter(p.id)}
                                     onMouseLeave={handleMouseLeave}
                                     hasInvestment={!!investment}
+                                    isQuickWatering={isQuickWatering}
                                 />
                             </motion.div>
 
@@ -522,24 +583,154 @@ const Farm = ({ investments = [] }) => {
                 ))}
 
                 {/* 물주기 버튼 (화면 좌표 기준) */}
-                <button
-                    onClick={addWaterDrop}
-                    style={{
-                        position: "absolute",
-                        left: 900,
-                        top: 500,
-                        width: 60,
-                        height: 60,
-                        borderRadius: "50%",
-                        backgroundColor: "#4169E1",
-                        border: "none",
-                        cursor: "pointer",
-                        fontSize: 24,
-                        color: "#fff",
-                    }}
+                <Tooltip 
+                    label={isQuickWatering ? "빠른 입금 모드 종료" : "빠르게 물 주기"}
+                    bg="blue.500" 
+                    color="white"
+                    borderRadius="md"
+                    hasArrow
                 >
-                    💧
-                </button>
+                    <button
+                        onClick={handleQuickWateringClick}
+                        style={{
+                            position: "absolute",
+                            left: 900,
+                            top: 500,
+                            width: 60,
+                            height: 60,
+                            borderRadius: "50%",
+                            backgroundColor: isQuickWatering ? "#2E4EA1" : "#4169E1",
+                            border: "none",
+                            cursor: "pointer",
+                            fontSize: 24,
+                            color: "#fff",
+                            transition: "all 0.2s",
+                            transform: isQuickWatering ? "scale(0.95)" : "scale(1)",
+                            boxShadow: isQuickWatering ? 
+                                "0 0 15px rgba(46, 78, 161, 0.5)" : 
+                                "none"
+                        }}
+                    >
+                        💧
+                    </button>
+                </Tooltip>
+
+                {/* 빠르게 물 주기 안내 메시지 */}
+                <AnimatePresence>
+                    {isQuickWatering && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: 20 }}
+                            transition={{ duration: 0.3 }}
+                            style={{
+                                position: "absolute",
+                                left: "50%",
+                                bottom: "50px",
+                                transform: "translateX(-50%)",
+                                textAlign: "center",
+                            }}
+                        >
+                            <Text
+                                color="blue.600"
+                                fontSize="lg"
+                                fontWeight="medium"
+                                bg="white"
+                                px={6}
+                                py={3}
+                                borderRadius="full"
+                                boxShadow="md"
+                            >
+                                나무를 클릭하고 빠르게 추가 투자를 진행해보세요!
+                            </Text>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+                {/* 빠른 입금 모달 */}
+                <Modal isOpen={isOpen} onClose={() => {
+                    onClose();
+                    setIsQuickWatering(false);
+                }} isCentered>
+                    <ModalOverlay backdropFilter="blur(8px)" />
+                    <ModalContent
+                        borderRadius="2xl"
+                        bg="white"
+                        p={4}
+                    >
+                        <ModalHeader
+                            borderBottomWidth="1px"
+                            borderColor="blue.100"
+                            color="blue.800"
+                            pb={4}
+                        >
+                            <HStack>
+                                <Text fontSize="1.2em">💧</Text>
+                                <Text>빠른 투자하기</Text>
+                            </HStack>
+                        </ModalHeader>
+                        <ModalBody py={6}>
+                            <VStack spacing={4}>
+                                <Text color="blue.600">투자할 금액을 입력해주세요</Text>
+                                <VStack width="100%" spacing={1} align="stretch">
+                                    <InputGroup size="lg">
+                                        <Input
+                                            placeholder="0"
+                                            value={formatAmount(depositAmount)}
+                                            onChange={handleAmountChange}
+                                            textAlign="right"
+                                            borderRadius="xl"
+                                            borderColor="blue.200"
+                                            pr="4.5rem"
+                                            _focus={{
+                                                borderColor: "blue.400",
+                                                boxShadow: "0 0 0 1px var(--chakra-colors-blue-400)"
+                                            }}
+                                            _hover={{
+                                                borderColor: "blue.300"
+                                            }}
+                                        />
+                                        <InputRightAddon
+                                            children="KRW"
+                                            bg="blue.50"
+                                            borderColor="blue.200"
+                                            borderLeftWidth="0"
+                                            roundedRight="xl"
+                                        />
+                                    </InputGroup>
+                                </VStack>
+                            </VStack>
+                        </ModalBody>
+                        <ModalFooter
+                            borderTopWidth="1px"
+                            borderColor="blue.100"
+                            pt={4}
+                        >
+                            <Button
+                                variant="ghost"
+                                mr={3}
+                                onClick={() => {
+                                    onClose();
+                                    setIsQuickWatering(false);
+                                }}
+                                color="blue.600"
+                                _hover={{ bg: 'blue.50' }}
+                            >
+                                취소
+                            </Button>
+                            <Button
+                                bg="blue.500"
+                                color="white"
+                                _hover={{ bg: 'blue.600' }}
+                                borderRadius="xl"
+                                isDisabled={!depositAmount}
+                                onClick={handleQuickDeposit}
+                            >
+                                {depositAmount ? `${formatAmount(depositAmount)} KRW 투자` : '투자하기'}
+                            </Button>
+                        </ModalFooter>
+                    </ModalContent>
+                </Modal>
             </motion.div>
         </div>
     );
