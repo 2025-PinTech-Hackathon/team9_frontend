@@ -20,14 +20,16 @@ import {
     RadioGroup,
     Stack,
     useToast,
+    Tooltip,
   } from "@chakra-ui/react";
   import { useEffect, useRef, useState } from "react";
-  import { useSearchParams } from "react-router-dom";
+  import { useNavigate, useSearchParams } from "react-router-dom";
   import FarmDetail from "../components/FarmDetail";
   import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
   import { faCog } from "@fortawesome/free-solid-svg-icons";
   import { customFetch } from "../utils/fetch";
   import config from "../../config.json";
+  import { useUser } from "../contexts/UserContext";
   
   function CreateInvestPage()  {
     const canvasRef = useRef(null);
@@ -35,12 +37,14 @@ import {
     const investmentId = searchParams.get("id");
     const toast = useToast();
     const [isLoading, setIsLoading] = useState(false);
-  
+    const navigate = useNavigate();
+    const { refetch } = useUser();
+
     const [investmentData, setInvestmentData] = useState({
       name: "",
       coinType: "",
       initialAmount: 0,
-      riskPreference: "보통",
+      riskLevel: "medium",
     });
   
     useEffect(() => {
@@ -66,13 +70,17 @@ import {
             name: investmentData.name,
             coin_type: investmentData.coinType,
             initial_amount: investmentData.initialAmount,
-            entry_price_usdt: 0 // 현재는 0으로 설정, 실제 구현시 현재 코인 가격을 가져와서 설정
+            risk_level: investmentData.riskLevel,
+            internal_position: parseInt(investmentId),
+            
           })
         });
 
         if (!response.ok) {
           throw new Error('투자 생성에 실패했습니다.');
         }
+
+        await refetch();
 
         toast({
           title: "투자 생성 완료",
@@ -81,7 +89,8 @@ import {
           duration: 5000,
           isClosable: true,
         });
-        
+        navigate("/main");
+
 
       } catch (error) {
         toast({
@@ -149,13 +158,19 @@ import {
             <FormControl isRequired>
               <FormLabel>투자 성향</FormLabel>
               <RadioGroup
-                value={investmentData.riskPreference}
-                onChange={(value) => setInvestmentData(prev => ({...prev, riskPreference: value}))}
+                value={investmentData.riskLevel}
+                onChange={(value) => setInvestmentData(prev => ({...prev, riskLevel: value}))}
               >
                 <Stack direction="row" spacing={6} justify="center">
-                  <Radio value="안정" colorScheme="green">안정</Radio>
-                  <Radio value="보통" colorScheme="blue">보통</Radio>
-                  <Radio value="위험" colorScheme="red">위험</Radio>
+                  <Tooltip label="안정적인 수익을 추구하는 보수적인 투자 전략" placement="top">
+                    <Radio value="low" colorScheme="green">안정</Radio>
+                  </Tooltip>
+                  <Tooltip label="적정한 위험과 수익을 추구하는 균형잡힌 투자 전략" placement="top">
+                    <Radio value="medium" colorScheme="blue">보통</Radio>
+                  </Tooltip>
+                  <Tooltip label="높은 수익을 추구하는 공격적인 투자 전략" placement="top">
+                    <Radio value="high" colorScheme="red">위험</Radio>
+                  </Tooltip>
                 </Stack>
               </RadioGroup>
             </FormControl>
