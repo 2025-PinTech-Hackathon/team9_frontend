@@ -53,8 +53,53 @@ const dropMaxX = Math.max(...tileLefts) + TILE_WIDTH * 1.5;
 // 호버 효과 애니메이션 시간 상수 정의
 const HOVER_ANIMATION_DURATION = 0.2;
 
+// 빈 타일 말풍선 컴포넌트
+const EmptyTileTooltip = memo(({ x, y }) => (
+    <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: 10 }}
+        transition={{ duration: 0.2 }}
+        style={{
+            position: "absolute",
+            left: x - 100,
+            top: y - 120,
+            zIndex: 10,
+            pointerEvents: "none",
+        }}
+    >
+        <Box
+            bg="white"
+            borderRadius="lg"
+            boxShadow="lg"
+            p={3}
+            width="200px"
+            position="relative"
+            _after={{
+                content: '""',
+                position: "absolute",
+                bottom: "-8px",
+                left: "50%",
+                transform: "translateX(-50%)",
+                borderWidth: "8px",
+                borderStyle: "solid",
+                borderColor: "white transparent transparent transparent",
+            }}
+        >
+            <VStack spacing={2} align="stretch">
+                <Text fontSize="sm" color="gray.600" textAlign="center">
+                    ✨ 새로운 투자봇을 심어보세요!
+                </Text>
+                <Text fontSize="xs" color="gray.500" textAlign="center">
+                    이곳에서 당신만의 자동 투자를 시작할 수 있어요
+                </Text>
+            </VStack>
+        </Box>
+    </motion.div>
+));
+
 // Ground: 잔디 타일
-const Ground = memo(({ x, y, onClick, isHovered, hoveredTileExists, onMouseEnter, onMouseLeave }) => (
+const Ground = memo(({ x, y, onClick, isHovered, hoveredTileExists, onMouseEnter, onMouseLeave, hasInvestment }) => (
     <motion.div
         style={{
             position: "absolute",
@@ -87,6 +132,11 @@ const Ground = memo(({ x, y, onClick, isHovered, hoveredTileExists, onMouseEnter
                 opacity: hoveredTileExists && !isHovered ? 0.5 : 1,
             }}
         />
+        <AnimatePresence>
+            {isHovered && !hasInvestment && (
+                <EmptyTileTooltip x={TILE_WIDTH * 0.75} y={TILE_HEIGHT * 0.5} />
+            )}
+        </AnimatePresence>
     </motion.div>
 ));
 
@@ -399,6 +449,7 @@ const Farm = ({ investments = [] }) => {
                                     hoveredTileExists={hoveredTileId !== null}
                                     onMouseEnter={() => handleMouseEnter(p.id)}
                                     onMouseLeave={handleMouseLeave}
+                                    hasInvestment={!!investment}
                                 />
                             </motion.div>
 
