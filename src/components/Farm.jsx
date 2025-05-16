@@ -263,7 +263,7 @@ const InvestmentTooltip = memo(({ investment, x, y }) => (
 ));
 
 // 투자 정보 요약 컴포넌트
-const InvestmentSummary = memo(({ investments }) => {
+const InvestmentSummary = memo(({ investments, scale }) => {
     const totalInvestment = investments.reduce((sum, inv) => sum + inv.initial_amount, 0);
     const totalProfit = investments.reduce((sum, inv) => sum + inv.current_profit, 0);
     const totalWithdrawable = totalInvestment + totalProfit;
@@ -274,13 +274,15 @@ const InvestmentSummary = memo(({ investments }) => {
     return (
         <Box
             position="absolute"
-            left="20px"
-            top="20px"
+            left={`${200 * scale}px`}
+            top={`${40 * scale}px`}
             bg="transparent"
             p={4}
             width="auto"
-            minWidth="280px"
+            minWidth={`${280 * scale}px`}
             zIndex={5}
+            transform={`scale(${scale})`}
+            transformOrigin="top left"
         >
             <VStack spacing={1} align="stretch">
                 <Text fontSize="md" fontWeight="semibold" color="gray.600" mb={-1}>
@@ -468,7 +470,7 @@ const Farm = ({ investments = [] }) => {
                 transition={{ duration: 0.5, delay: 0.2 }}
             >
                 {/* 투자 정보 요약 */}
-                <InvestmentSummary investments={investments} />
+                <InvestmentSummary investments={investments} scale={scale} />
 
                 {positions.map((p) => {
                     const investment = investments.find(inv => inv.internal_position === p.id);
@@ -594,15 +596,15 @@ const Farm = ({ investments = [] }) => {
                         onClick={handleQuickWateringClick}
                         style={{
                             position: "absolute",
-                            left: 900,
-                            top: 500,
-                            width: 60,
-                            height: 60,
+                            left: `${900 * scale}px`,
+                            top: `${500 * scale}px`,
+                            width: `${60 * scale}px`,
+                            height: `${60 * scale}px`,
                             borderRadius: "50%",
                             backgroundColor: isQuickWatering ? "#2E4EA1" : "#4169E1",
                             border: "none",
                             cursor: "pointer",
-                            fontSize: 24,
+                            fontSize: `${24 * scale}px`,
                             color: "#fff",
                             transition: "all 0.2s",
                             transform: isQuickWatering ? "scale(0.95)" : "scale(1)",
@@ -626,8 +628,9 @@ const Farm = ({ investments = [] }) => {
                             style={{
                                 position: "absolute",
                                 left: "50%",
-                                bottom: "50px",
-                                transform: "translateX(-50%)",
+                                bottom: `${50 * scale}px`,
+                                transform: `translateX(-50%) scale(${scale})`,
+                                transformOrigin: "bottom center",
                                 textAlign: "center",
                             }}
                         >
