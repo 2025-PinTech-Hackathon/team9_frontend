@@ -340,6 +340,7 @@ function DetailPage() {
           }
       );
       const updatedData = await updatedResponse.json();
+      const newInitialAmount = updatedData.data.initial_amount;
       setInvestmentData({
         id: updatedData.data.id,
         name: updatedData.data.name,
@@ -363,6 +364,11 @@ function DetailPage() {
 
       onWithdrawClose();
       setWithdrawAmount('');
+
+      // 출금 후 투자금이 0원이면 메인페이지로 이동
+      if (newInitialAmount <= 0) {
+        navigate('/main');
+      }
     } catch (error) {
       toast({
         title: "에러 발생",
@@ -823,6 +829,9 @@ function DetailPage() {
           <ModalBody py={6}>
             <VStack spacing={4}>
               <Text color="red.600">출금할 금액을 입력해주세요</Text>
+              <Text color="red.400" fontSize="sm" mt={-2}>
+                모든 금액을 출금하면 해당 투자봇이 비활성화되어 사라집니다.
+              </Text>
               <VStack width="100%" spacing={1} align="stretch">
                 <InputGroup size="lg">
                   <Input

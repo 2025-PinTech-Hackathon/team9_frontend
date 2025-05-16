@@ -327,6 +327,9 @@ const Farm = ({ investments = [] }) => {
     // 타일 등장 순서 정의
     const tileOrder = [1, 2, 4, 3, 5, 7, 6, 8, 9];
 
+    // 투자 금액이 0원 초과인 투자만 표시
+    const filteredInvestments = investments.filter(inv => inv.initial_amount > 0);
+
     useEffect(() => {
         const updateScale = () => {
             const c = containerRef.current;
@@ -371,7 +374,7 @@ const Farm = ({ investments = [] }) => {
 
     const handleTileClick = useCallback(
         (id) => {
-            const investment = investments.find(inv => inv.internal_position === id);
+            const investment = filteredInvestments.find(inv => inv.internal_position === id);
             
             if (isQuickWatering) {
                 if (investment) {
@@ -390,7 +393,7 @@ const Farm = ({ investments = [] }) => {
                 }, 500);
             }
         },
-        [navigate, investments, isQuickWatering, onOpen]
+        [navigate, filteredInvestments, isQuickWatering, onOpen]
     );
 
     const addWaterDrop = useCallback(() => {
@@ -444,7 +447,7 @@ const Farm = ({ investments = [] }) => {
 
     // hoveredTileId가 빈 타일(투자 없는 타일)일 때만 말풍선 표시
     const hoveredEmptyTile = positions.find(
-        p => p.id === hoveredTileId && !investments.find(inv => inv.internal_position === p.id)
+        p => p.id === hoveredTileId && !filteredInvestments.find(inv => inv.internal_position === p.id)
     );
 
     return (
@@ -468,13 +471,13 @@ const Farm = ({ investments = [] }) => {
                 }}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ duration: 0.5, delay: 0.2 }}
+                transition={{ duration: 0.3, delay: 0.1 }}
             >
                 {/* 투자 정보 요약 */}
-                <InvestmentSummary investments={investments} scale={scale} />
+                <InvestmentSummary investments={filteredInvestments} scale={scale} />
 
                 {positions.map((p) => {
-                    const investment = investments.find(inv => inv.internal_position === p.id);
+                    const investment = filteredInvestments.find(inv => inv.internal_position === p.id);
                     const isHovered = hoveredTileId === p.id;
                     const delay = isInitialAnimationDone ? 0 : getAnimationDelay(p.id);
                     const isDisabled = isQuickWatering && !investment;
