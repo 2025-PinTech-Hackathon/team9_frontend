@@ -37,7 +37,7 @@ function AuthLayout({ children }) {
       {/* 메인 컨테이너 */}
       <Box w="100%" h="100vh" maxW="1024px" px={4} position="relative">
         {/* 배경 구름들 */}
-        <Box position="absolute" w="100%" h="100%" zIndex={0}>
+        <Box position="absolute" w="100%" h="100%" zIndex={10} pointerEvents="none">
           {clouds.map((cloud, index) => (
             <Cloud
               key={index}
