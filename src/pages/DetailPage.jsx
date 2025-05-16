@@ -29,8 +29,6 @@ import {
 import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import FarmDetail from "../components/FarmDetail";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCog } from "@fortawesome/free-solid-svg-icons";
 
 function DetailPage() {
   const canvasRef = useRef(null);
@@ -327,17 +325,6 @@ function DetailPage() {
             transition="all 0.2s"
           >
             수확하기
-          </Button>
-          <Button
-            bg="green.100"
-            color="green.800"
-            size="lg"
-            p={4}
-            borderRadius="full"
-            _hover={{ bg: 'green.200', transform: 'rotate(90deg)' }}
-            transition="all 0.3s"
-          >
-            <FontAwesomeIcon icon={faCog} />
           </Button>
         </HStack>
       </VStack>
