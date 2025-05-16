@@ -73,10 +73,10 @@ const EmptyTileTooltip = memo(({ x, y }) => (
         exit={{ opacity: 0, y: 10 }}
         transition={{ duration: 0.2 }}
         style={{
-            position: "absolute",
-            left: x - 100,
+            position: "fixed",
+            left: x + 242,
             top: y - 120,
-            zIndex: 10,
+            zIndex: 9999,  // stacking context 무시를 위해 최상위로
             pointerEvents: "none",
         }}
     >
@@ -144,11 +144,6 @@ const Ground = memo(({ x, y, onClick, isHovered, hoveredTileExists, onMouseEnter
                 opacity: (!hasInvestment && isQuickWatering) || (hoveredTileExists && !isHovered) ? 0.5 : 1,
             }}
         />
-        <AnimatePresence>
-            {isHovered && !hasInvestment && !isQuickWatering && (
-                <EmptyTileTooltip x={TILE_WIDTH * 0.75} y={TILE_HEIGHT * 0.5} />
-            )}
-        </AnimatePresence>
     </motion.div>
 ));
 
@@ -446,6 +441,11 @@ const Farm = ({ investments = [] }) => {
         setDepositAmount('');
     };
 
+    // hoveredTileId가 빈 타일(투자 없는 타일)일 때만 말풍선 표시
+    const hoveredEmptyTile = positions.find(
+        p => p.id === hoveredTileId && !investments.find(inv => inv.internal_position === p.id)
+    );
+
     return (
         <div
             ref={containerRef}
@@ -735,6 +735,16 @@ const Farm = ({ investments = [] }) => {
                     </ModalContent>
                 </Modal>
             </motion.div>
+
+            {/* 빈 타일 말풍선: 타일 map 루프 바깥에서 한 번만 렌더링 */}
+            <AnimatePresence>
+                {hoveredEmptyTile && (
+                    <EmptyTileTooltip
+                        x={hoveredEmptyTile.x - TILE_WIDTH / 2 + absXOffset + TILE_WIDTH * 0.75}
+                        y={hoveredEmptyTile.y - TILE_HEIGHT / 2 + absYOffset + TILE_HEIGHT * 0.5}
+                    />
+                )}
+            </AnimatePresence>
         </div>
     );
 };
