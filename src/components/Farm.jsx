@@ -122,9 +122,14 @@ const Farm = ({ investments = [] }) => {
     const handleTileClick = useCallback(
         (id) => {
             console.log("tile clicked:", id);
-            navigate(`/main/create?id=${id}`);
+            const hasInvestment = investments.some(investment => investment.internal_position === id);
+            if (hasInvestment) {
+                navigate(`/main/detail?id=${id}`);
+            } else {
+                navigate(`/main/create?id=${id}`);
+            }
         },
-        [navigate]
+        [navigate, investments]
     );
 
     const addWaterDrop = useCallback(() => {
