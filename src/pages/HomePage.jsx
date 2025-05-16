@@ -19,11 +19,10 @@ function HomePage() {
         position="relative"
         zIndex={1}
       >
-        홈 페이지
         <br />
         <Box 
-          width="100%" 
-          height="100%" 
+          width="100%"
+          height="100%"
           position="relative"
           zIndex={1}
         >
