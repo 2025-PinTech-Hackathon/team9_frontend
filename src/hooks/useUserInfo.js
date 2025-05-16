@@ -14,7 +14,10 @@ export const useUserInfo = () => {
 
             const token = localStorage.getItem('access_token');
             if (!token) {
-                throw new Error('No token found');
+                // Refresh page
+                console.log("No token found");
+                return;
+                // window.location.reload();
             }
 
             const response = await customFetch(`${config.hostname}/auth/info`, {
