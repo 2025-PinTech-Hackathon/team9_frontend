@@ -28,6 +28,7 @@ import {
   Image,
   InputGroup,
   InputRightAddon,
+  Center,
 } from "@chakra-ui/react";
 import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
@@ -41,6 +42,7 @@ import {
   Tooltip as RechartsTooltip,
   ResponsiveContainer
 } from 'recharts';
+import treeImage from "../assets/farm/big_tree.png";
 
 function DetailPage() {
   const canvasRef = useRef(null);
@@ -190,10 +192,16 @@ function DetailPage() {
             <VStack spacing={6}>
               <Heading as="h1" fontSize="2xl" color="green.800">
                 투자봇 상세 정보
-      </Heading>
-              <Text color="green.600" fontSize="lg" fontWeight="medium">
-                #{investmentId}
-              </Text>
+              </Heading>
+              <Center>
+                <Image 
+                  src={treeImage} 
+                  alt="Tree" 
+                  width="120px" 
+                  height="120px"
+                  objectFit="contain"
+                />
+              </Center>
             </VStack>
           </CardBody>
         </Card>

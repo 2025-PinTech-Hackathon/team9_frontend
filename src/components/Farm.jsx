@@ -2,6 +2,7 @@ import { Application, extend, useTick } from "@pixi/react";
 import { useCallback, useState, useEffect, useRef, memo } from "react";
 import { Texture, Container, Sprite, Graphics, Assets, Rectangle } from "pixi.js";
 import grassTexture from "../assets/farm/grass1.png";
+import treeSvg from "../assets/farm/big_tree.png";
 
 extend({
   Container,
@@ -11,45 +12,29 @@ extend({
 
 const TILE_WIDTH = 120;
 const TILE_HEIGHT = 120;
-const TREE_HEIGHT = 100;
+const TREE_WIDTH = 100;
+const TREE_HEIGHT = 150;
 
 const Tree = ({ x, y, scale = 1 }) => {
+  const [texture, setTexture] = useState(null);
+
+  useEffect(() => {
+    const loadTexture = async () => {
+      const loadedTexture = await Assets.load(treeSvg);
+      setTexture(loadedTexture);
+    };
+    loadTexture();
+  }, []);
+
+  if (!texture) return null;
+
   return (
     <pixiContainer x={x} y={y} scale={scale}>
-      {/* 나무 줄기 */}
-      <pixiGraphics
-        draw={(g) => {
-          // 나무 줄기
-          g.beginFill(0x8b4513);
-          g.moveTo(-8, 0);
-          g.lineTo(8, 0);
-          g.lineTo(6, TREE_HEIGHT);
-          g.lineTo(-6, TREE_HEIGHT);
-          g.endFill();
-
-          // 나무 껍질 질감
-          g.lineStyle(1, 0x654321);
-          g.moveTo(-6, 10);
-          g.lineTo(-4, TREE_HEIGHT - 10);
-          g.moveTo(0, 10);
-          g.lineTo(0, TREE_HEIGHT - 10);
-          g.moveTo(4, 10);
-          g.lineTo(6, TREE_HEIGHT - 10);
-        }}
-      />
-      {/* 나무 잎 */}
-      <pixiGraphics
-        draw={(g) => {
-          // 잎의 기본 모양
-          g.beginFill(0x228b22);
-          g.drawEllipse(0, -30, 35, 25);
-          g.endFill();
-
-          // 잎의 하이라이트
-          g.beginFill(0x32cd32);
-          g.drawEllipse(-10, -35, 15, 10);
-          g.endFill();
-        }}
+      <pixiSprite
+        texture={texture}
+        width={TREE_WIDTH}
+        height={TREE_HEIGHT}
+        anchor={0.5}
       />
     </pixiContainer>
   );
@@ -230,6 +215,16 @@ const Farm = memo(({ onNavigate }) => {
               <Ground
                 x={pos.x - TILE_WIDTH / 2 + absXOffset}
                 y={pos.y - TILE_HEIGHT / 2 + absYOffset}
+              />
+              <Tree
+                x={pos.x - TILE_WIDTH / 2 + absXOffset}
+                y={pos.y - TILE_HEIGHT / 2 + absYOffset - (pos.id === 5 ? 90 : 50)}
+                scale={
+                  pos.id === 5 ? 3 : // 중앙 나무
+                  pos.id === 1 || pos.id === 9 ? 0.7 : // 맨 위와 맨 아래
+                  pos.level === 1 ? 0.85 : // 중간 레벨
+                  0.75 // 나머지
+                }
               />
             </pixiContainer>
           ))}
