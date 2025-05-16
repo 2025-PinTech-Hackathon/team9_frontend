@@ -202,6 +202,9 @@ const Farm = ({ investments = [] }) => {
                                 width: TILE_WIDTH * 1.5,
                                 height: TILE_HEIGHT * 1.4,
                                 pointerEvents: "none",
+                                zIndex: 3,
+                                opacity: hoveredTileId !== null && hoveredTileId !== investment.internal_position ? 0.5 : 1,
+                                transition: "all 0.3s ease",
                             }}
                         />
                     );
