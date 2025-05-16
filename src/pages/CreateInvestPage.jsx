@@ -83,7 +83,7 @@ import {
         >
           <VStack spacing={4} align="stretch">
             <FormControl isRequired>
-              <FormLabel>투자 이름름</FormLabel>
+              <FormLabel>투자 이름</FormLabel>
               <Input 
                 placeholder="투자 이름을 입력하세요" 
                 value={investmentData.name || ''}
