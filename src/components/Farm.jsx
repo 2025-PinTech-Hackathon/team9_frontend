@@ -280,26 +280,27 @@ const InvestmentSummary = memo(({ investments, scale }) => {
             transformOrigin="top left"
         >
             <VStack spacing={1} align="stretch">
-                <Text fontSize="md" fontWeight="semibold" color="gray.600" mb={-1}>
+                <Text fontSize="2xl" fontWeight="semibold" color="gray.600" mb={-1}>
                     출금 가능 금액
                 </Text>
-                <Text fontSize="2xl" fontWeight="bold" color="gray.800">
+                <Text fontSize="4xl" fontWeight="bold" color="gray.800">
                     {totalWithdrawable.toLocaleString()}원
                 </Text>
                 <HStack spacing={2} mt={2}>
-                    <Text fontSize="sm" color="gray.500">
+                    <Text fontSize="xl" color="gray.500">
                         수익률
                     </Text>
                     <Badge
                         colorScheme={totalProfit >= 0 ? "green" : "red"}
                         variant="subtle"
-                        px={2}
-                        py={0.5}
+                        px={4}
+                        py={1}
+                        fontSize="xl"
                     >
                         {totalProfit >= 0 ? "+" : ""}
                         {totalProfitRate.toFixed(1)}%
                     </Badge>
-                    <Text fontSize="sm" color="gray.500">
+                    <Text fontSize="xl" color="gray.500">
                         {totalProfit >= 0 ? "+" : ""}
                         {totalProfit.toLocaleString()}원
                     </Text>
