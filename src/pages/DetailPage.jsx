@@ -29,6 +29,7 @@ import {
   InputGroup,
   InputRightAddon,
   Center,
+  useToast,
 } from "@chakra-ui/react";
 import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
@@ -43,6 +44,8 @@ import {
   ResponsiveContainer
 } from 'recharts';
 import treeImage from "../assets/farm/big_tree.png";
+import { customFetch } from "../utils/fetch";
+import config from "../../config.json";
 
 function DetailPage() {
   const canvasRef = useRef(null);
@@ -60,7 +63,7 @@ function DetailPage() {
       name: "Bitcoin",
       currentPrice: 65000,
       priceChangePercent: 2.5,
-      logoUrl: "https://cryptologos.cc/logos/bitcoin-btc-logo.png",
+      logoUrl: "",
     },
     priceHistory: [
       { time: '00:00', price: 64000 },
@@ -77,6 +80,8 @@ function DetailPage() {
   const [withdrawAmount, setWithdrawAmount] = useState('');
 
   const [isLoading, setIsLoading] = useState(false);
+  const [isDepositLoading, setIsDepositLoading] = useState(false);
+  const [isWithdrawLoading, setIsWithdrawLoading] = useState(false);
 
   const {
     isOpen: isDepositOpen,
@@ -90,22 +95,44 @@ function DetailPage() {
     onClose: onWithdrawClose,
   } = useDisclosure();
 
+  const toast = useToast();
+
   useEffect(() => {
     const fetchInvestmentData = async () => {
       setIsLoading(true);
       try {
-        const response = await fetch(
-          `https://api.example.com/investments/${investmentId}`
+        const token = localStorage.getItem('access_token');
+        if (!token) {
+          throw new Error('로그인이 필요합니다.');
+        }
+        const response = await customFetch(
+          `${config.hostname}/investments/get_investment_by_position?internal_position=${investmentId}`, {
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            }
+          }
         );
         const data = await response.json();
+        console.log(data);
         setInvestmentData({
-          startDate: data.startDate,
-          duration: data.duration,
-          riskLevel: data.riskLevel,
-          expectedReturn: data.expectedReturn,
-          availableAmount: data.availableAmount,
-          coinInfo: data.coinInfo,
-          priceHistory: data.priceHistory,
+          id: data.data.id,
+          startDate: data.data.created_at.split('T')[0],
+          duration: Math.floor((new Date() - new Date(data.data.created_at)) / (1000 * 60 * 60 * 24)),
+          riskLevel: data.data.risk_level === 'low' ? 1 : data.data.risk_level === 'medium' ? 2 : 3,
+          expectedReturn: data.data.current_profit,
+          availableAmount: data.data.initial_amount + data.data.current_profit,
+          coinInfo: {
+            symbol: data.data.coin_type,
+            name: data.data.coin_type === 'BTC' ? 'Bitcoin' : data.data.coin_type === 'ETH' ? 'Ethereum' : 'Solana',
+            currentPrice: data.data.entry_price_usdt,
+            priceChangePercent: ((data.data.current_profit / data.data.initial_amount) * 100).toFixed(2),
+            logoUrl: `/src/assets/coins/${data.data.coin_type.toLowerCase()}.svg`,
+          },
+          priceHistory: data.data.transactions.map(tx => ({
+            time: new Date(tx.created_at).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }),
+            price: tx.amount
+          }))
         });
       } catch (error) {
         console.error("투자 데이터를 가져오는데 실패했습니다:", error);
@@ -166,6 +193,180 @@ function DetailPage() {
     if (!amount) return '0.00';
     const numericAmount = parseInt(amount.replace(/,/g, ''));
     return (numericAmount / exchangeRate).toFixed(2);
+  };
+
+  const handleDeposit = async () => {
+    try {
+      setIsDepositLoading(true);
+      const token = localStorage.getItem('access_token');
+      if (!token) {
+        throw new Error('로그인이 필요합니다.');
+      }
+
+      const numericAmount = parseInt(depositAmount.replace(/,/g, ''));
+      if (!numericAmount || numericAmount <= 0) {
+        throw new Error('유효한 금액을 입력해주세요.');
+      }
+
+      const response = await customFetch(
+        `${config.hostname}/investments/${investmentData.id}/deposit`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            amount: numericAmount
+          })
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('입금에 실패했습니다.');
+      }
+
+      toast({
+        title: "입금 완료",
+        description: `${formatAmount(depositAmount)}원이 성공적으로 입금되었습니다.`,
+        status: "success",
+        duration: 5000,
+        isClosable: true,
+      });
+
+      // 입금 후 데이터 새로고침
+      const updatedResponse = await customFetch(
+        `${config.hostname}/investments/get_investment_by_position?internal_position=${investmentId}`,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        }
+      );
+      const updatedData = await updatedResponse.json();
+      setInvestmentData({
+        id: updatedData.data.id,
+        startDate: updatedData.data.created_at.split('T')[0],
+        duration: Math.floor((new Date() - new Date(updatedData.data.created_at)) / (1000 * 60 * 60 * 24)),
+        riskLevel: updatedData.data.risk_level === 'low' ? 1 : updatedData.data.risk_level === 'medium' ? 2 : 3,
+        expectedReturn: updatedData.data.current_profit,
+        availableAmount: updatedData.data.initial_amount + updatedData.data.current_profit,
+        coinInfo: {
+          symbol: updatedData.data.coin_type,
+          name: updatedData.data.coin_type === 'BTC' ? 'Bitcoin' : updatedData.data.coin_type === 'ETH' ? 'Ethereum' : 'Solana',
+          currentPrice: updatedData.data.entry_price_usdt,
+          priceChangePercent: ((updatedData.data.current_profit / updatedData.data.initial_amount) * 100).toFixed(2),
+          logoUrl: `/src/assets/coins/${updatedData.data.coin_type.toLowerCase()}.svg`,
+        },
+        priceHistory: updatedData.data.transactions.map(tx => ({
+          time: new Date(tx.created_at).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }),
+          price: tx.amount
+        }))
+      });
+
+      onDepositClose();
+      setDepositAmount('');
+    } catch (error) {
+      toast({
+        title: "에러 발생",
+        description: error.message,
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      });
+    } finally {
+      setIsDepositLoading(false);
+    }
+  };
+
+  const handleWithdraw = async () => {
+    try {
+      setIsWithdrawLoading(true);
+      const token = localStorage.getItem('access_token');
+      if (!token) {
+        throw new Error('로그인이 필요합니다.');
+      }
+
+      const numericAmount = parseInt(withdrawAmount.replace(/,/g, ''));
+      if (!numericAmount || numericAmount <= 0) {
+        throw new Error('유효한 금액을 입력해주세요.');
+      }
+
+      if (numericAmount > investmentData.availableAmount) {
+        throw new Error('출금 가능 금액을 초과했습니다.');
+      }
+
+      const response = await customFetch(
+        `${config.hostname}/investments/${investmentData.id}/withdraw`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            amount: numericAmount
+          })
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('출금에 실패했습니다.');
+      }
+
+      toast({
+        title: "출금 완료",
+        description: `${formatAmount(withdrawAmount)}원이 성공적으로 출금되었습니다.`,
+        status: "success",
+        duration: 5000,
+        isClosable: true,
+      });
+
+      // 출금 후 데이터 새로고침
+      const updatedResponse = await customFetch(
+        `${config.hostname}/investments/get_investment_by_position?internal_position=${investmentId}`,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        }
+      );
+      const updatedData = await updatedResponse.json();
+      setInvestmentData({
+        id: updatedData.data.id,
+        startDate: updatedData.data.created_at.split('T')[0],
+        duration: Math.floor((new Date() - new Date(updatedData.data.created_at)) / (1000 * 60 * 60 * 24)),
+        riskLevel: updatedData.data.risk_level === 'low' ? 1 : updatedData.data.risk_level === 'medium' ? 2 : 3,
+        expectedReturn: updatedData.data.current_profit,
+        availableAmount: updatedData.data.initial_amount + updatedData.data.current_profit,
+        coinInfo: {
+          symbol: updatedData.data.coin_type,
+          name: updatedData.data.coin_type === 'BTC' ? 'Bitcoin' : updatedData.data.coin_type === 'ETH' ? 'Ethereum' : 'Solana',
+          currentPrice: updatedData.data.entry_price_usdt,
+          priceChangePercent: ((updatedData.data.current_profit / updatedData.data.initial_amount) * 100).toFixed(2),
+          logoUrl: `/src/assets/coins/${updatedData.data.coin_type.toLowerCase()}.svg`,
+        },
+        priceHistory: updatedData.data.transactions.map(tx => ({
+          time: new Date(tx.created_at).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }),
+          price: tx.amount
+        }))
+      });
+
+      onWithdrawClose();
+      setWithdrawAmount('');
+    } catch (error) {
+      toast({
+        title: "에러 발생",
+        description: error.message,
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      });
+    } finally {
+      setIsWithdrawLoading(false);
+    }
   };
 
   return (
@@ -549,6 +750,8 @@ function DetailPage() {
               _hover={{ bg: 'green.600' }}
               borderRadius="xl"
               isDisabled={!depositAmount}
+              isLoading={isDepositLoading}
+              onClick={handleDeposit}
             >
               {depositAmount ? `${formatAmount(depositAmount)} KRW 심기` : '심기'}
             </Button>
@@ -633,6 +836,8 @@ function DetailPage() {
               _hover={{ bg: 'orange.600' }}
               borderRadius="xl"
               isDisabled={!withdrawAmount}
+              isLoading={isWithdrawLoading}
+              onClick={handleWithdraw}
             >
               {withdrawAmount ? `${formatAmount(withdrawAmount)} KRW 수확` : '수확하기'}
             </Button>

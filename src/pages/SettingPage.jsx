@@ -10,7 +10,7 @@ function SettingPage() {
   const { userInfo, isLoading, error } = useUser();
 
   const handleLogout = () => {
-    localStorage.clear();
+    // localStorage.clear();
     toast({
       title: "로그아웃 되었습니다.",
       status: "success",
