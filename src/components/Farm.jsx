@@ -39,9 +39,7 @@ const dropMaxX = Math.max(...tileLefts) + TILE_WIDTH * 1.5;
 
 // Ground: 잔디 타일
 const Ground = memo(({ x, y, onClick, isHovered, hoveredTileExists, onMouseEnter, onMouseLeave }) => (
-    <img
-        src={grassTexture}
-        alt=""
+    <div
         style={{
             position: "absolute",
             left: x,
@@ -49,16 +47,26 @@ const Ground = memo(({ x, y, onClick, isHovered, hoveredTileExists, onMouseEnter
             width: TILE_WIDTH * 1.5,
             height: TILE_HEIGHT,
             cursor: "pointer",
-            userSelect: "none",
-            transition: "all 0.3s ease",
-            opacity: hoveredTileExists && !isHovered ? 0.5 : 1,
+            transition: "transform 0.2s ease",
             transform: isHovered ? 'translateY(-10px)' : 'translateY(0)',
             zIndex: isHovered ? 2 : 1,
         }}
         onClick={onClick}
         onMouseEnter={onMouseEnter}
         onMouseLeave={onMouseLeave}
-    />
+    >
+        <img
+            src={grassTexture}
+            alt=""
+            style={{
+                width: "100%",
+                height: "100%",
+                userSelect: "none",
+                transition: "opacity 0.2s ease",
+                opacity: hoveredTileExists && !isHovered ? 0.5 : 1,
+            }}
+        />
+    </div>
 ));
 
 // WaterDrop: 물방울 애니메이션
@@ -209,7 +217,8 @@ const Farm = ({ investments = [] }) => {
                                 pointerEvents: "none",
                                 zIndex: 3,
                                 opacity: hoveredTileId !== null && hoveredTileId !== investment.internal_position ? 0.5 : 1,
-                                transition: "all 0.3s ease",
+                                transition: "all 0.2s ease",
+                                transform: hoveredTileId === investment.internal_position ? 'translateY(-10px)' : 'translateY(0)',
                             }}
                         />
                     );
