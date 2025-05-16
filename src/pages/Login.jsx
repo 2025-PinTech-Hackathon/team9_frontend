@@ -30,7 +30,7 @@ function Login() {
     e.preventDefault();
     try {
       const response = await withLoading(
-        customFetch(`${config.hostname}/api/login`, {
+        customFetch(`${config.hostname}/auth/login`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

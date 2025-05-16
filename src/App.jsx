@@ -12,6 +12,7 @@ import HomePage from "./pages/HomePage";
 import TransferPage from "./pages/TransferPage";
 import SettingPage from "./pages/SettingPage";
 import DetailPage from "./pages/DetailPage";
+import CreateInvestPage from "./pages/CreateInvestPage";
 import theme from "./theme";
 
 function App() {
@@ -27,6 +28,8 @@ function App() {
               <Route path="transfer" element={<TransferPage />} />
               <Route path="settings" element={<SettingPage />} />
               <Route path="detail" element={<DetailPage />} />
+              <Route path="create" element={<CreateInvestPage />} />
+              
             </Route>
             <Route path="/" element={<Navigate to="/login" replace />} />
           </Routes>

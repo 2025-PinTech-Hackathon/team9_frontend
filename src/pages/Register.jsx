@@ -42,7 +42,7 @@ function Register() {
 
     try {
       await withLoading(
-        customFetch(`${config.hostname}/api/register`, {
+        customFetch(`${config.hostname}/auth/register`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

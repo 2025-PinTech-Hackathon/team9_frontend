@@ -14,7 +14,7 @@ export const useUserInfo = () => {
                 throw new Error('No token found');
             }
 
-            const response = await customFetch(`${config.hostname}/api/info`, {
+            const response = await customFetch(`${config.hostname}/auth/info`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
