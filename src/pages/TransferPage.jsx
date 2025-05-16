@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { customFetch } from '../utils/fetch';
+import config from '../../config.json';
 import {
     Box,
     Container,
@@ -55,6 +57,7 @@ import {
     SimpleGrid,
 } from "@chakra-ui/react";
 import { ChevronLeftIcon, ChevronRightIcon, SearchIcon } from '@chakra-ui/icons';
+import { useUser } from '../contexts/UserContext';
 
 // 타입 정의
 /**
@@ -88,7 +91,7 @@ import { ChevronLeftIcon, ChevronRightIcon, SearchIcon } from '@chakra-ui/icons'
 const API_ENDPOINTS = {
     DEPOSIT: '/api/v1/transactions/deposit',
     WITHDRAW: '/api/v1/transactions/withdraw',
-    TRANSACTION_HISTORY: '/api/v1/transactions/history',
+    TRANSACTION_HISTORY: '/wallet/transactions',
     BALANCE: '/api/v1/balance',
 };
 
@@ -286,6 +289,8 @@ const DepositModal = React.memo(({
 ));
 
 const TransferPage = () => {
+    // 유저 정보
+    const { userInfo } = useUser();
     // 잔액 및 금액 상태
     const [balance, setBalance] = useState(0);
     const [inputAmount, setInputAmount] = useState('');
@@ -294,6 +299,8 @@ const TransferPage = () => {
     const [transactionList, setTransactionList] = useState([]);
     const [filteredTransactionList, setFilteredTransactionList] = useState([]);
     const [sortOption, setSortOption] = useState(SORT_OPTIONS.LATEST);
+    const [isLoadingTransactions, setIsLoadingTransactions] = useState(false);
+    const [totalPages, setTotalPages] = useState(1);
 
     // 페이지네이션 상태
     const [currentPage, setCurrentPage] = useState(1);
@@ -325,25 +332,55 @@ const TransferPage = () => {
         accountHolder: '코인봇'
     };
 
-    // 거래 내역 더미 데이터 (실제로는 API에서 받아올 데이터)
-    useEffect(() => {
-        const dummyTransactions = Array.from({ length: 20 }, (_, index) => {
-            const date = new Date(2024, 2, index + 1);
-            return {
-                id: index + 1,
-                type: index % 3 === 0 ? '출금' : '입금',
-                amount: Math.floor(Math.random() * 1000000) + 10000,
-                date: date.toLocaleString(),
-                timestamp: date.getTime(),
-                status: TRANSACTION_STATUS.COMPLETED,
-            };
-        });
+    // 거래 내역 가져오기
+    const fetchTransactions = async (page = 1) => {
+        setIsLoadingTransactions(true);
+        try {
+            const token = localStorage.getItem('access_token');
+            const response = await customFetch(`${config.hostname}${API_ENDPOINTS.TRANSACTION_HISTORY}?page=${page}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
 
-        // 최신순으로 정렬
-        const sortedTransactions = sortTransactionList(dummyTransactions, SORT_OPTIONS.LATEST);
-        setTransactionList(sortedTransactions);
-        setFilteredTransactionList(sortedTransactions);
-    }, []);
+            if (!response.ok) {
+                throw new Error('거래 내역을 가져오는데 실패했습니다.');
+            }
+
+            const data = await response.json();
+            const formattedTransactions = data.transactions.map(transaction => ({
+                id: transaction.id,
+                type: transaction.transaction_type === 'deposit' ? '입금' : '출금',
+                amount: transaction.amount,
+                date: new Date(transaction.created_at).toLocaleString(),
+                timestamp: new Date(transaction.created_at).getTime(),
+                status: transaction.status === 'completed' ? '완료' : '대기',
+            }));
+
+            setTransactionList(formattedTransactions);
+            setFilteredTransactionList(formattedTransactions);
+            setTotalPages(data.total_pages);
+            setCurrentPage(data.page);
+        } catch (error) {
+            console.error('거래 내역 가져오기 실패:', error);
+            toast({
+                title: '오류 발생',
+                description: '거래 내역을 가져오는데 실패했습니다.',
+                status: 'error',
+                duration: 3000,
+                isClosable: true,
+            });
+        } finally {
+            setIsLoadingTransactions(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchTransactions(1);
+        if (userInfo) {
+            setBalance(userInfo.usdt_balance);
+        }
+    }, [userInfo]);
 
     // 천 단위 구분 기호 적용 함수
     const formatCurrency = (value) => {
@@ -390,8 +427,21 @@ const TransferPage = () => {
         });
 
         try {
-            // TODO: API 호출로 대체
-            await new Promise(resolve => setTimeout(resolve, 3000));
+            const token = localStorage.getItem('access_token');
+            const response = await customFetch(`${config.hostname}/wallet/deposit`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    amount: depositAmount
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error('입금 처리 중 오류가 발생했습니다.');
+            }
 
             const newTransaction = {
                 id: Date.now(),
@@ -416,9 +466,10 @@ const TransferPage = () => {
             });
 
         } catch (error) {
+            console.error('입금 처리 중 오류:', error);
             toast.update(depositToastId, {
                 title: '입금 실패',
-                description: '처리 중 오류가 발생했습니다.',
+                description: error.message || '처리 중 오류가 발생했습니다.',
                 status: 'error',
                 duration: 3000,
                 isClosable: true,
@@ -467,8 +518,21 @@ const TransferPage = () => {
         });
 
         try {
-            // TODO: API 호출로 대체
-            await new Promise(resolve => setTimeout(resolve, 3000));
+            const token = localStorage.getItem('access_token');
+            const response = await customFetch(`${config.hostname}/wallet/withdraw`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    amount: withdrawAmount
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error('출금 처리 중 오류가 발생했습니다.');
+            }
 
             const newTransaction = {
                 id: Date.now(),
@@ -496,9 +560,10 @@ const TransferPage = () => {
             });
 
         } catch (error) {
+            console.error('출금 처리 중 오류:', error);
             toast.update(withdrawToastId, {
                 title: '출금 실패',
-                description: '처리 중 오류가 발생했습니다.',
+                description: error.message || '처리 중 오류가 발생했습니다.',
                 status: 'error',
                 duration: 3000,
                 isClosable: true,
@@ -589,15 +654,10 @@ const TransferPage = () => {
         setCurrentPage(1);
     };
 
-    // 페이지네이션 계산
-    const indexOfLastItem = currentPage * ITEMS_PER_PAGE;
-    const indexOfFirstItem = indexOfLastItem - ITEMS_PER_PAGE;
-    const currentPageItems = filteredTransactionList.slice(indexOfFirstItem, indexOfLastItem);
-    const totalPages = Math.ceil(filteredTransactionList.length / ITEMS_PER_PAGE);
-
     // 페이지 변경 핸들러
     const handlePageChange = (newPage) => {
         setCurrentPage(newPage);
+        fetchTransactions(newPage);
     };
 
     return (
@@ -837,30 +897,36 @@ const TransferPage = () => {
                                             <option value="amount">금액 높은순</option>
                                         </Select>
                                     </HStack>
-                                    <Table variant="simple">
-                                        <Thead>
-                                            <Tr>
-                                                <Th>거래 유형</Th>
-                                                <Th isNumeric>금액</Th>
-                                                <Th>거래 일시</Th>
-                                                <Th>상태</Th>
-                                            </Tr>
-                                        </Thead>
-                                        <Tbody>
-                                            {currentPageItems.map((transaction) => (
-                                                <Tr key={transaction.id}>
-                                                    <Td color={transaction.type === '입금' ? 'green.500' : 'red.500'}>
-                                                        {transaction.type}
-                                                    </Td>
-                                                    <Td isNumeric>
-                                                        {transaction.amount.toLocaleString()}원
-                                                    </Td>
-                                                    <Td>{transaction.date}</Td>
-                                                    <Td>{transaction.status}</Td>
+                                    {isLoadingTransactions ? (
+                                        <Flex justify="center" align="center" p={8}>
+                                            <Spinner size="xl" color="green.500" />
+                                        </Flex>
+                                    ) : (
+                                        <Table variant="simple">
+                                            <Thead>
+                                                <Tr>
+                                                    <Th>거래 유형</Th>
+                                                    <Th isNumeric>금액</Th>
+                                                    <Th>거래 일시</Th>
+                                                    <Th>상태</Th>
                                                 </Tr>
-                                            ))}
-                                        </Tbody>
-                                    </Table>
+                                            </Thead>
+                                            <Tbody>
+                                                {filteredTransactionList.map((transaction) => (
+                                                    <Tr key={transaction.id}>
+                                                        <Td color={transaction.type === '입금' ? 'green.500' : 'red.500'}>
+                                                            {transaction.type}
+                                                        </Td>
+                                                        <Td isNumeric>
+                                                            {transaction.amount.toLocaleString()}원
+                                                        </Td>
+                                                        <Td>{transaction.date}</Td>
+                                                        <Td>{transaction.status}</Td>
+                                                    </Tr>
+                                                ))}
+                                            </Tbody>
+                                        </Table>
+                                    )}
                                 </TableContainer>
 
                                 {/* 페이지네이션 */}

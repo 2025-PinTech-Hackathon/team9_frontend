@@ -7,6 +7,7 @@ import React, {
 } from "react";
 import { useNavigate } from "react-router-dom";
 import grassTexture from "../assets/farm/grass1.png";
+import bigTreeImage from "../assets/farm/big_tree.png";
 
 const TILE_WIDTH = 120;
 const TILE_HEIGHT = 120;
@@ -14,6 +15,8 @@ const BASE_WIDTH = 1024;
 const BASE_HEIGHT = 700;
 const absXOffset = 180;
 const absYOffset = 170;
+const absTreeXOffset = 180;
+const absTreeYOffset = 90;
 
 const positions = [
     { x: 350, y: 160, id: 1 },
@@ -90,7 +93,7 @@ const WaterDrop = memo(({ x, onComplete }) => {
     );
 });
 
-const Farm = () => {
+const Farm = ({ investments = [] }) => {
     const navigate = useNavigate();
     const containerRef = useRef(null);
     const [scale, setScale] = useState(1);
@@ -163,6 +166,28 @@ const Farm = () => {
                         onClick={() => handleTileClick(p.id)}
                     />
                 ))}
+
+                {/* 투자 위치에 나무 표시 */}
+                {investments.map((investment) => {
+                    const position = positions.find(p => p.id === investment.internal_position);
+                    if (!position) return null;
+                    
+                    return (
+                        <img
+                            key={investment.id}
+                            src={bigTreeImage}
+                            alt="Investment Tree"
+                            style={{
+                                position: "absolute",
+                                left: position.x - TILE_WIDTH / 2 + absTreeXOffset,
+                                top: position.y - TILE_HEIGHT / 2 + absTreeYOffset,
+                                width: TILE_WIDTH * 1.5,
+                                height: TILE_HEIGHT * 1.4,
+                                pointerEvents: "none",
+                            }}
+                        />
+                    );
+                })}
 
                 {/* 물방울들 */}
                 {waterDrops.map((drop) => (
