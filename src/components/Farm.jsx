@@ -80,10 +80,10 @@ const EmptyTileTooltip = memo(({ x, y }) => (
         exit={{ opacity: 0, y: 10 }}
         transition={{ duration: 0.2 }}
         style={{
-            position: "fixed",
-            left: x - 75,
-            top: y - 120,
-            zIndex: 9999,  // stacking context 무시를 위해 최상위로
+            position: "absolute",
+            left: x - 110,
+            top: y - 60,
+            zIndex: 9999,
             pointerEvents: "none",
         }}
     >
@@ -847,8 +847,8 @@ const Farm = ({ investments = [], onInvestmentUpdate }) => {
             <AnimatePresence>
                 {hoveredEmptyTile && (
                     <EmptyTileTooltip
-                        x={hoveredEmptyTile.x + absXOffset}
-                        y={hoveredEmptyTile.y + absYOffset}
+                        x={hoveredEmptyTile.x + absTreeXOffset}
+                        y={hoveredEmptyTile.y + absTreeYOffset}
                     />
                 )}
             </AnimatePresence>
