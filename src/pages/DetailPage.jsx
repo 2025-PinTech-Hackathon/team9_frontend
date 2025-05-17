@@ -421,11 +421,11 @@ function DetailPage() {
     if (!investmentData || !investmentData.coinInfo) return littleTreeImage;
     
     const profitRate = parseFloat(investmentData.coinInfo.priceChangePercent);
-    const investmentAmount = investmentData.availableAmount;
+    const amount = investmentData.availableAmount;
     
-    if (profitRate < 10 && investmentAmount < 200000) {
+    if (profitRate < 10 && amount < 200000) {
       return littleTreeImage;
-    } else if ((profitRate >= 10 && profitRate < 20) || (investmentAmount >= 200000 && investmentAmount < 1000000)) {
+    } else if ((profitRate >= 10 && profitRate < 20) || (amount >= 200000 && amount < 1000000)) {
       return smallTreeImage;
     } else {
       return bigTreeImage;
@@ -486,21 +486,16 @@ function DetailPage() {
                       objectFit="contain"
                       style={{
                         transform: `scale(${(() => {
-                          const amount = investmentData.availableAmount;
                           const profitRate = parseFloat(investmentData.coinInfo.priceChangePercent);
+                          const amount = investmentData.availableAmount;
                           
-                          // 수익률이나 투자금액 중 하나라도 큰 나무 조건을 만족하면 큰 나무 스케일 적용
-                          if (profitRate >= 20 || amount >= 1000000) {
-                            // 300만원 단위로 크기 증가, 최대 2배까지
-                            const scaleByAmount = Math.min(1 + Math.floor((amount - 1000000) / 3000000) * 0.3, 2);
-                            // 수익률 10% 단위로 크기 증가, 최대 2배까지
-                            const scaleByProfit = Math.min(1 + Math.floor((profitRate - 20) / 10) * 0.3, 2);
-                            // 둘 중 더 큰 값 사용
-                            return Math.max(scaleByAmount, scaleByProfit);
+                          // 수익률이나 투자금액 중 하나라도 큰 나무 조건을 만족하면 큰 나무로
+                          if (profitRate < 10 && amount < 200000) {
+                            return 0.7; // 기본 작은 나무 크기
                           } else if ((profitRate >= 10 && profitRate < 20) || (amount >= 200000 && amount < 1000000)) {
                             return 0.85; // 중간 나무 크기
                           } else {
-                            return 0.7; // 기본 작은 나무 크기
+                            return 1; // 큰 나무는 항상 1배 크기로 고정
                           }
                         })()})`
                       }}
