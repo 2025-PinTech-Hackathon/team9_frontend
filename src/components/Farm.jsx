@@ -74,8 +74,8 @@ const EmptyTileTooltip = memo(({ x, y }) => (
         transition={{ duration: 0.2 }}
         style={{
             position: "fixed",
-            left: x + 242,
-            top: y - 120,
+            left: x + 210,
+            top: y - 60,
             zIndex: 9999,  // stacking context 무시를 위해 최상위로
             pointerEvents: "none",
         }}
@@ -85,7 +85,7 @@ const EmptyTileTooltip = memo(({ x, y }) => (
             borderRadius="lg"
             boxShadow="lg"
             p={3}
-            width="200px"
+            width="270px"
             position="relative"
             _after={{
                 content: '""',
