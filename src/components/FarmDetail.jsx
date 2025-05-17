@@ -2,7 +2,9 @@ import { Application, extend, useTick } from "@pixi/react";
 import { useCallback, useState, useEffect, useRef } from "react";
 import { Texture, Container, Sprite, Graphics, Assets } from "pixi.js";
 import grassTexture from "../assets/farm/grass1.png";
-import treeSvg from "../assets/farm/big_tree.png";
+import bigTreeImage from "../assets/farm/big_tree.png";
+import littleTreeImage from "../assets/farm/little_tree.png";
+import smallTreeImage from "../assets/farm/small_tree.png";
 extend({
   Container,
   Graphics,
@@ -14,16 +16,32 @@ const TILE_HEIGHT = 120;
 const TREE_WIDTH = 100;
 const TREE_HEIGHT = 150;
 
-const Tree = ({ x, y, scale = 1 }) => {
+const Tree = ({ x, y, scale = 1, profitRate = 0 }) => {
   const [texture, setTexture] = useState(null);
 
   useEffect(() => {
     const loadTexture = async () => {
-      const loadedTexture = await Assets.load(treeSvg);
+      let treeImage;
+      let treeScale;
+
+      if (profitRate < 10) {
+          treeImage = littleTreeImage;
+          treeScale = 0.7;
+      } else if (profitRate < 20) {
+          treeImage = smallTreeImage;
+          treeScale = 0.85;
+      } else {
+          treeImage = bigTreeImage;
+          const additionalScale = Math.floor((profitRate - 20) / 10) * 0.3;
+          treeScale = 1 + additionalScale;
+      }
+
+      const loadedTexture = await Assets.load(treeImage);
       setTexture(loadedTexture);
+      scale = treeScale; // 수익률에 따른 크기 적용
     };
     loadTexture();
-  }, []);
+  }, [profitRate]);
 
   if (!texture) return null;
 
@@ -33,7 +51,7 @@ const Tree = ({ x, y, scale = 1 }) => {
         texture={texture}
         width={TREE_WIDTH}
         height={TREE_HEIGHT}
-        anchor={0.5}
+        anchor={{ x: 0.5, y: 1 }} // 아래 중심점 기준으로 설정
       />
     </pixiContainer>
   );
@@ -91,10 +109,13 @@ const WaterDrop = ({ x, y, onComplete }) => {
   );
 };
 
-const FarmDetail = () => {
+const FarmDetail = ({ investment }) => {
   const [waterDrops, setWaterDrops] = useState([]);
   const [scale, setScale] = useState(1);
   const containerRef = useRef(null);
+
+  // 수익률 계산
+  const profitRate = investment ? (investment.current_profit / investment.initial_amount) * 100 : 0;
 
   useEffect(() => {
     const updateScale = () => {
@@ -158,7 +179,7 @@ const FarmDetail = () => {
           {/* 중앙에 땅과 나무 배치 */}
           <pixiContainer>
             <Ground x={512} y={350} />
-            <Tree x={412} y={350} scale={0.8} />
+            <Tree x={412} y={350} scale={0.8} profitRate={profitRate} />
           </pixiContainer>
 
           {/* 물방울들 */}

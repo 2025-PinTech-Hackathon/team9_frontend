@@ -8,6 +8,8 @@ import React, {
 import { useNavigate } from "react-router-dom";
 import grassTexture from "../assets/farm/grass1.png";
 import bigTreeImage from "../assets/farm/big_tree.png";
+import littleTreeImage from "../assets/farm/little_tree.png";
+import smallTreeImage from "../assets/farm/small_tree.png";
 import { motion, AnimatePresence } from "framer-motion";
 import {
     Box,
@@ -180,6 +182,7 @@ const WaterDrop = memo(({ x, onComplete }) => {
                 borderRadius: "50%",
                 backgroundColor: "#00bfff",
                 pointerEvents: "none",
+                zIndex: 3,
             }}
         />
     );
@@ -601,25 +604,48 @@ const Farm = ({ investments = [], onInvestmentUpdate }) => {
                                             zIndex: 3
                                         }}
                                     >
-                                        <motion.img
-                                            src={bigTreeImage}
-                                            alt="Investment Tree"
-                                            animate={{
-                                                opacity: hoveredTileId !== null && !isHovered ? 0.5 : 1
-                                            }}
-                                            transition={{
-                                                duration: HOVER_ANIMATION_DURATION,
-                                                ease: "easeOut"
-                                            }}
-                                            style={{
-                                                position: "absolute",
-                                                left: p.x - TILE_WIDTH / 2 + absTreeXOffset,
-                                                top: p.y - TILE_HEIGHT / 2 + absTreeYOffset,
-                                                width: TILE_WIDTH * 1.5,
-                                                height: TILE_HEIGHT * 1.4,
-                                                pointerEvents: "none",
-                                            }}
-                                        />
+                                        {(() => {
+                                            const profitRate = (investment.current_profit / investment.initial_amount) * 100;
+                                            let treeImage;
+                                            let treeScale;
+
+                                            if (profitRate < 10) {
+                                                treeImage = littleTreeImage;
+                                                treeScale = 0.7;
+                                            } else if (profitRate < 20) {
+                                                treeImage = smallTreeImage;
+                                                treeScale = 0.85;
+                                            } else {
+                                                treeImage = bigTreeImage;
+                                                // 20% 이상일 때 0.3배씩 추가 증가
+                                                const additionalScale = Math.floor((profitRate - 20) / 10) * 0.3;
+                                                treeScale = 1 + additionalScale;
+                                            }
+
+                                            return (
+                                                <motion.img
+                                                    src={treeImage}
+                                                    alt="Investment Tree"
+                                                    animate={{
+                                                        opacity: hoveredTileId !== null && !isHovered ? 0.5 : 1
+                                                    }}
+                                                    transition={{
+                                                        duration: HOVER_ANIMATION_DURATION,
+                                                        ease: "easeOut"
+                                                    }}
+                                                    style={{
+                                                        position: "absolute",
+                                                        left: p.x - TILE_WIDTH / 2 + absTreeXOffset,
+                                                        top: p.y - TILE_HEIGHT / 2 + absTreeYOffset,
+                                                        width: TILE_WIDTH * 1.5,
+                                                        height: TILE_HEIGHT * 1.4,
+                                                        pointerEvents: "none",
+                                                        transform: `scale(${treeScale})`,
+                                                        transformOrigin: 'center bottom'
+                                                    }}
+                                                />
+                                            );
+                                        })()}
                                     </motion.div>
 
                                     {/* 투자봇 정보 말풍선 */}
@@ -659,8 +685,8 @@ const Farm = ({ investments = [], onInvestmentUpdate }) => {
                         onClick={handleQuickWateringClick}
                         style={{
                             position: "absolute",
-                            left: `${900 * scale}px`,
-                            top: `${500 * scale}px`,
+                            right: `${180 * scale}px`,  // 오른쪽에서의 거리를 줄임
+                            bottom: `${180 * scale}px`, // 아래에서의 거리를 줄임
                             width: `${60 * scale}px`,
                             height: `${60 * scale}px`,
                             borderRadius: "50%",
@@ -673,7 +699,8 @@ const Farm = ({ investments = [], onInvestmentUpdate }) => {
                             transform: isQuickWatering ? "scale(0.95)" : "scale(1)",
                             boxShadow: isQuickWatering ? 
                                 "0 0 15px rgba(46, 78, 161, 0.5)" : 
-                                "none"
+                                "0 4px 8px rgba(0, 0, 0, 0.1)",
+                            zIndex: 4
                         }}
                     >
                         💧
