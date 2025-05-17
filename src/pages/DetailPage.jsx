@@ -209,11 +209,25 @@ function DetailPage() {
   };
 
   // 숫자와 천 단위 구분 기호만 허용하는 함수
-  const handleAmountChange = (e, setAmount) => {
+  const handleAmountChange = (e, setAmount, isWithdraw = false) => {
     const value = e.target.value;
     // 숫자와 콤마만 허용
     if (/^[0-9,]*$/.test(value)) {
-      setAmount(value.replace(/,/g, '')); // 저장할 때는 콤마 제거
+      const numericValue = parseInt(value.replace(/,/g, '')) || 0;
+      
+      // 출금의 경우 투자 금액을 초과하지 않도록 보정
+      if (isWithdraw && numericValue > investmentData.availableAmount) {
+        setAmount(investmentData.availableAmount.toString());
+        toast({
+          title: "금액 자동 보정",
+          description: `출금 가능한 최대 금액은 ${formatAmount(investmentData.availableAmount.toString())}원 입니다.`,
+          status: "info",
+          duration: 3000,
+          isClosable: true,
+        });
+      } else {
+        setAmount(value.replace(/,/g, '')); // 저장할 때는 콤마 제거
+      }
     }
   };
 
@@ -898,7 +912,7 @@ function DetailPage() {
                   <Input
                       placeholder="0"
                       value={formatAmount(withdrawAmount)}
-                      onChange={(e) => handleAmountChange(e, setWithdrawAmount)}
+                      onChange={(e) => handleAmountChange(e, setWithdrawAmount, true)}
                       textAlign="right"
                       borderRadius="xl"
                       borderColor="red.200"

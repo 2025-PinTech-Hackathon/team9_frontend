@@ -51,15 +51,15 @@ const absTreeXOffset = 180;
 const absTreeYOffset = 40;
 
 const positions = [
-    { x: 350, y: 160, id: 1, texture: grassTexture },
-    { x: 250, y: 220, id: 2, texture: grassTexture2 },
-    { x: 450, y: 220, id: 3, texture: grassTexture3 },
-    { x: 150, y: 280, id: 4, texture: grassTexture2 },
-    { x: 350, y: 280, id: 5, texture: grassTexture2 },
-    { x: 550, y: 280, id: 6, texture: grassTexture },
-    { x: 250, y: 340, id: 7, texture: grassTexture },
-    { x: 450, y: 340, id: 8, texture: grassTexture2 },
-    { x: 350, y: 400, id: 9, texture: grassTexture3 },
+    { x: 300, y: 200, id: 1, texture: grassTexture },
+    { x: 200, y: 260, id: 2, texture: grassTexture2 },
+    { x: 400, y: 260, id: 3, texture: grassTexture3 },
+    { x: 100, y: 320, id: 4, texture: grassTexture2 },
+    { x: 300, y: 320, id: 5, texture: grassTexture2 },
+    { x: 500, y: 320, id: 6, texture: grassTexture },
+    { x: 200, y: 380, id: 7, texture: grassTexture },
+    { x: 400, y: 380, id: 8, texture: grassTexture2 },
+    { x: 300, y: 440, id: 9, texture: grassTexture3 },
 ];
 
 // FarmHTML.jsx 상단, positions 정의 바로 아래쯤
@@ -703,7 +703,7 @@ const Farm = ({ investments = [], onInvestmentUpdate }) => {
                         style={{
                             position: "absolute",
                             right: `${180 * scale}px`,  // 오른쪽에서의 거리를 줄임
-                            bottom: `${180 * scale}px`, // 아래에서의 거리를 줄임
+                            bottom: `${130 * scale}px`, // 아래에서의 거리를 줄임
                             width: `${60 * scale}px`,
                             height: `${60 * scale}px`,
                             borderRadius: "50%",
