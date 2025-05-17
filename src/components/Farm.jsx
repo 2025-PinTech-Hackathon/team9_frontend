@@ -7,6 +7,8 @@ import React, {
 } from "react";
 import { useNavigate } from "react-router-dom";
 import grassTexture from "../assets/farm/grass1.png";
+import grassTexture2 from "../assets/farm/grass2.png";
+import grassTexture3 from "../assets/farm/grass3.png";
 import bigTreeImage from "../assets/farm/big_tree.png";
 import littleTreeImage from "../assets/farm/little_tree.png";
 import smallTreeImage from "../assets/farm/small_tree.png";
@@ -49,15 +51,15 @@ const absTreeXOffset = 180;
 const absTreeYOffset = 40;
 
 const positions = [
-    { x: 350, y: 160, id: 1 },
-    { x: 250, y: 220, id: 2 },
-    { x: 450, y: 220, id: 3 },
-    { x: 150, y: 280, id: 4 },
-    { x: 350, y: 280, id: 5 },
-    { x: 550, y: 280, id: 6 },
-    { x: 250, y: 340, id: 7 },
-    { x: 450, y: 340, id: 8 },
-    { x: 350, y: 400, id: 9 },
+    { x: 350, y: 160, id: 1, texture: grassTexture },
+    { x: 250, y: 220, id: 2, texture: grassTexture2 },
+    { x: 450, y: 220, id: 3, texture: grassTexture3 },
+    { x: 150, y: 280, id: 4, texture: grassTexture2 },
+    { x: 350, y: 280, id: 5, texture: grassTexture2 },
+    { x: 550, y: 280, id: 6, texture: grassTexture },
+    { x: 250, y: 340, id: 7, texture: grassTexture },
+    { x: 450, y: 340, id: 8, texture: grassTexture2 },
+    { x: 350, y: 400, id: 9, texture: grassTexture3 },
 ];
 
 // FarmHTML.jsx 상단, positions 정의 바로 아래쯤
@@ -116,7 +118,7 @@ const EmptyTileTooltip = memo(({ x, y }) => (
 ));
 
 // Ground: 잔디 타일
-const Ground = memo(({ x, y, onClick, isHovered, hoveredTileExists, onMouseEnter, onMouseLeave, hasInvestment, isQuickWatering }) => (
+const Ground = memo(({ x, y, onClick, isHovered, hoveredTileExists, onMouseEnter, onMouseLeave, hasInvestment, isQuickWatering, id }) => (
     <motion.div
         style={{
             position: "absolute",
@@ -139,7 +141,7 @@ const Ground = memo(({ x, y, onClick, isHovered, hoveredTileExists, onMouseEnter
         onMouseLeave={onMouseLeave}
     >
         <img
-            src={grassTexture}
+            src={positions[id - 1].texture}
             alt=""
             style={{
                 width: "100%",
@@ -290,7 +292,7 @@ const InvestmentSummary = memo(({ investments, scale }) => {
                     출금 가능 금액
                 </Text>
                 <Text fontSize="4xl" fontWeight="bold" color="gray.800">
-                    {totalWithdrawable.toLocaleString()}원
+                    {totalWithdrawable.toLocaleString(undefined, {maximumFractionDigits: 2})}원
                 </Text>
                 <HStack spacing={2} mt={2}>
                     <Text fontSize="xl" color="gray.500">
@@ -304,11 +306,11 @@ const InvestmentSummary = memo(({ investments, scale }) => {
                         fontSize="xl"
                     >
                         {totalProfit >= 0 ? "+" : ""}
-                        {totalProfitRate.toFixed(1)}%
+                        {totalProfitRate.toFixed(2)}%
                     </Badge>
                     <Text fontSize="xl" color="gray.500">
                         {totalProfit >= 0 ? "+" : ""}
-                        {totalProfit.toLocaleString()}원
+                        {totalProfit.toLocaleString(undefined, {maximumFractionDigits: 2})}원
                     </Text>
                 </HStack>
             </VStack>
@@ -584,6 +586,7 @@ const Farm = ({ investments = [], onInvestmentUpdate }) => {
                                     onMouseLeave={handleMouseLeave}
                                     hasInvestment={!!investment}
                                     isQuickWatering={isQuickWatering}
+                                    id={p.id}
                                 />
                             </motion.div>
 

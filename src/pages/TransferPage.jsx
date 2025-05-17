@@ -290,7 +290,7 @@ const DepositModal = React.memo(({
 
 const TransferPage = () => {
     // 유저 정보
-    const { userInfo } = useUser();
+    const { userInfo, refetch } = useUser();
     // 잔액 및 금액 상태
     const [balance, setBalance] = useState(0);
     const [inputAmount, setInputAmount] = useState('');
@@ -331,6 +331,11 @@ const TransferPage = () => {
         accountNumber: '110-123-456789',
         accountHolder: '코인봇'
     };
+
+    // 컴포넌트 마운트 시 userInfo 다시 가져오기
+    useEffect(() => {
+        refetch();
+    }, []);
 
     // 거래 내역 가져오기
     const fetchTransactions = async (page = 1) => {
