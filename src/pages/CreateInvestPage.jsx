@@ -21,6 +21,8 @@ import {
     Stack,
     useToast,
     Tooltip,
+    InputGroup,
+    InputRightAddon,
   } from "@chakra-ui/react";
   import { useEffect, useRef, useState } from "react";
   import { useNavigate, useSearchParams } from "react-router-dom";
@@ -45,7 +47,7 @@ import {
     const [investmentData, setInvestmentData] = useState({
       name: "",
       coinType: "",
-      initialAmount: 0,
+      initialAmount: "",
       riskLevel: "medium",
     });
   
@@ -61,6 +63,25 @@ import {
         document.removeEventListener("mousedown", handleClickOutside);
       };
     }, [navigate]);
+
+    // 천 단위 구분 기호 적용 함수
+    const formatAmount = (value) => {
+      if (!value) return '';
+      // 숫자만 추출
+      const numbers = value.replace(/[^0-9]/g, '');
+      // 천 단위 구분 기호 적용
+      return numbers.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    };
+
+    // 숫자와 천 단위 구분 기호만 허용하는 함수
+    const handleAmountChange = (e) => {
+      const value = e.target.value;
+      // 숫자와 콤마만 허용
+      if (/^[0-9,]*$/.test(value)) {
+        const numericValue = value.replace(/,/g, '');
+        setInvestmentData(prev => ({...prev, initialAmount: numericValue}));
+      }
+    };
   
     const handleCreateInvestment = async () => {
       try {
@@ -80,7 +101,7 @@ import {
           body: JSON.stringify({
             name: investmentData.name,
             coin_type: investmentData.coinType,
-            initial_amount: investmentData.initialAmount,
+            initial_amount: parseFloat(investmentData.initialAmount.replace(/,/g, '')),
             risk_level: investmentData.riskLevel,
             internal_position: parseInt(investmentId),
             
@@ -170,12 +191,14 @@ import {
 
                 <FormControl isRequired>
                   <FormLabel>초기 투자 금액</FormLabel>
-                  <Input 
-                    type="number" 
-                    placeholder="초기 투자 금액을 입력하세요"
-                    value={investmentData.initialAmount || ''}
-                    onChange={(e) => setInvestmentData(prev => ({...prev, initialAmount: parseFloat(e.target.value)}))}
-                  />
+                  <InputGroup size="md">
+                    <Input 
+                      placeholder="초기 투자 금액을 입력하세요"
+                      value={formatAmount(investmentData.initialAmount)}
+                      onChange={handleAmountChange}
+                    />
+                    <InputRightAddon children="원" />
+                  </InputGroup>
                 </FormControl>
 
                 <FormControl isRequired>
