@@ -33,6 +33,7 @@ import {
     InputRightAddon,
     useDisclosure,
 } from "@chakra-ui/react";
+import config from "../../config.json";
 
 const TILE_WIDTH = 120;
 const TILE_HEIGHT = 120;
@@ -74,9 +75,9 @@ const EmptyTileTooltip = memo(({ x, y }) => (
         transition={{ duration: 0.2 }}
         style={{
             position: "fixed",
-            left: x + 242,
+            left: x,
             top: y - 120,
-            zIndex: 9999,  // stacking context 무시를 위해 최상위로
+            zIndex: 9999,
             pointerEvents: "none",
         }}
     >
@@ -310,7 +311,7 @@ const InvestmentSummary = memo(({ investments, scale }) => {
     );
 });
 
-const Farm = ({ investments = [] }) => {
+const Farm = ({ investments = [], onInvestmentUpdate }) => {
     const navigate = useNavigate();
     const containerRef = useRef(null);
     const [scale, setScale] = useState(1);
@@ -342,6 +343,10 @@ const Farm = ({ investments = [] }) => {
         window.addEventListener("resize", updateScale);
         return () => window.removeEventListener("resize", updateScale);
     }, []);
+
+    useEffect(() => {
+        console.log(investments);
+    }, [investments]);
 
     useEffect(() => {
         // 컴포넌트 마운트 시 애니메이션 상태 초기화
@@ -399,15 +404,33 @@ const Farm = ({ investments = [] }) => {
     const addWaterDrop = useCallback(() => {
         if (isWatering) return;
         setIsWatering(true);
-        setWaterDrops(prev => [
-            ...prev,
-            {
-                id: Date.now(),
-                x: Math.random() * (dropMaxX - dropMinX) + dropMinX
-            }
-        ]);
-        setTimeout(() => setIsWatering(false), 1000);
-    }, [isWatering]);
+
+        // 선택된 투자봇의 위치 찾기
+        const selectedPosition = positions.find(p => p.id === selectedInvestment.internal_position);
+        if (!selectedPosition) return;
+
+        // 투자봇의 x 좌표 기준으로 물방울 생성
+        const baseX = selectedPosition.x + absTreeXOffset;
+        const dropCount = 10; // 물방울 개수
+        const spread = 130; // 물방울이 퍼지는 범위
+
+        // 여러 개의 물방울 생성
+        for (let i = 0; i < dropCount; i++) {
+            const randomOffset = (Math.random() - 0.5) * spread;
+            setTimeout(() => {
+                setWaterDrops(prev => [
+                    ...prev,
+                    {
+                        id: Date.now() + i,
+                        x: baseX + randomOffset
+                    }
+                ]);
+            }, i * 100); // 각 물방울 사이에 200ms 간격
+        }
+
+        // 모든 물방울이 생성된 후 watering 상태 해제
+        setTimeout(() => setIsWatering(false), dropCount * 200 + 1000);
+    }, [isWatering, selectedInvestment]);
 
     const removeWaterDrop = useCallback((id) => {
         setWaterDrops((prev) => prev.filter((d) => d.id !== id));
@@ -438,11 +461,47 @@ const Farm = ({ investments = [] }) => {
 
     // 빠른 입금 처리 함수
     const handleQuickDeposit = async () => {
-        // TODO: API 호출 로직 구현
-        console.log('Quick deposit:', depositAmount, 'to investment:', selectedInvestment);
-        onClose();
-        setIsQuickWatering(false);
-        setDepositAmount('');
+        try {
+            const accessToken = localStorage.getItem('access_token');
+            if (!accessToken) {
+                console.error('액세스 토큰이 없습니다.');
+                return;
+            }
+
+            const response = await fetch(`${config.hostname}/investments/${selectedInvestment.id}/deposit`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${accessToken}`
+                },
+                body: JSON.stringify({
+                    amount: parseInt(depositAmount.replace(/,/g, ''))
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error('입금 처리 중 오류가 발생했습니다.');
+            }
+
+            const data = await response.json();
+            
+            // 부모 컴포넌트의 investments 상태 업데이트
+            if (typeof onInvestmentUpdate === 'function') {
+                onInvestmentUpdate(data.investment);
+            }
+
+            // 성공적으로 처리된 경우
+            onClose();
+            setIsQuickWatering(false);
+            setDepositAmount('');
+            
+            // 물주기 애니메이션 실행
+            addWaterDrop();
+            
+        } catch (error) {
+            console.error('입금 처리 중 오류:', error);
+            // TODO: 에러 메시지 표시
+        }
     };
 
     // hoveredTileId가 빈 타일(투자 없는 타일)일 때만 말풍선 표시
@@ -744,8 +803,8 @@ const Farm = ({ investments = [] }) => {
             <AnimatePresence>
                 {hoveredEmptyTile && (
                     <EmptyTileTooltip
-                        x={hoveredEmptyTile.x - TILE_WIDTH / 2 + absXOffset + TILE_WIDTH * 0.75}
-                        y={hoveredEmptyTile.y - TILE_HEIGHT / 2 + absYOffset + TILE_HEIGHT * 0.5}
+                        x={hoveredEmptyTile.x + absXOffset}
+                        y={hoveredEmptyTile.y + absYOffset}
                     />
                 )}
             </AnimatePresence>

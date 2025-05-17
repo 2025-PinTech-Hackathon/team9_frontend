@@ -69,14 +69,7 @@ function DetailPage() {
       priceChangePercent: 2.5,
       logoUrl: "",
     },
-    priceHistory: [
-      { time: '00:00', price: 64000 },
-      { time: '04:00', price: 64500 },
-      { time: '08:00', price: 65200 },
-      { time: '12:00', price: 64800 },
-      { time: '16:00', price: 65500 },
-      { time: '20:00', price: 65000 },
-    ]
+    priceHistory: []
   });
 
   const [exchangeRate, setExchangeRate] = useState(1300); // USD to KRW
@@ -119,6 +112,39 @@ function DetailPage() {
         );
         const data = await response.json();
         console.log(data);
+
+        // 투자 금액 변화 데이터 생성
+        const allTransactions = [
+          ...data.data.transactions.map(tx => ({
+            type: 'deposit',
+            amount: tx.amount,
+            created_at: tx.created_at,
+            description: tx.description
+          })),
+          ...data.data.trade_history.map(trade => ({
+            type: 'profit',
+            amount: trade.profit_amount,
+            created_at: trade.created_at,
+            description: '거래 수익'
+          }))
+        ].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+
+        let currentAmount = 0;
+        const priceHistory = allTransactions.map(tx => {
+          if (tx.type === 'deposit') {
+            currentAmount += tx.amount;
+          } else if (tx.type === 'profit') {
+            currentAmount += tx.amount;
+          }
+          return {
+            time: new Date(tx.created_at).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }),
+            price: currentAmount,
+            type: tx.type,
+            description: tx.description,
+            change: tx.amount
+          };
+        });
+
         setInvestmentData({
           id: data.data.id,
           name: data.data.name,
@@ -134,10 +160,7 @@ function DetailPage() {
             priceChangePercent: ((data.data.current_profit / data.data.initial_amount) * 100).toFixed(2),
             logoUrl: `/src/assets/coins/${data.data.coin_type.toLowerCase()}.svg`,
           },
-          priceHistory: data.data.transactions.map(tx => ({
-            time: new Date(tx.created_at).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }),
-            price: tx.amount
-          }))
+          priceHistory: priceHistory
         });
       } catch (error) {
         console.error("투자 데이터를 가져오는데 실패했습니다:", error);
@@ -528,12 +551,37 @@ function DetailPage() {
                           <CartesianGrid strokeDasharray="3 3" />
                           <XAxis dataKey="time" />
                           <YAxis />
-                          <RechartsTooltip />
+                          <RechartsTooltip 
+                            formatter={(value, name, props) => {
+                              const data = props.payload;
+                              const changeType = data.type === 'deposit' ? '입금' : '거래 수익';
+                              const changeAmount = data.change > 0 ? `+${data.change.toLocaleString()}` : data.change.toLocaleString();
+                              return [
+                                <div style={{ padding: '3px' }}>
+                                  <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>
+                                    {`${value.toLocaleString()} KRW`}
+                                  </div>
+                                  <div style={{ color: data.type === 'deposit' ? '#38A169' : '#3182CE', marginBottom: '5px' }}>
+                                    {`${changeType}: ${changeAmount} KRW`}
+                                  </div>
+                                </div>,
+                                '투자 금액'
+                              ];
+                            }}
+                            labelFormatter={(label) => `시간: ${label}`}
+                            contentStyle={{
+                              backgroundColor: 'white',
+                              border: '1px solid #E2E8F0',
+                              borderRadius: '8px',
+                              padding: '8px'
+                            }}
+                          />
                           <Area
                               type="monotone"
                               dataKey="price"
                               stroke="#38A169"
                               fill="#38A16933"
+                              name="투자 금액"
                           />
                         </AreaChart>
                       </ResponsiveContainer>
@@ -650,7 +698,7 @@ function DetailPage() {
                           <StatLabel color="green.700">예상 성장률</StatLabel>
                           <HStack align="baseline" mt={2}>
                             <StatNumber fontSize="3xl" color="green.600">
-                              {investmentData.expectedReturn}
+                              {Number(investmentData.expectedReturn).toFixed(2)}
                             </StatNumber>
                             <Text color="green.600" fontSize="xl">%</Text>
                           </HStack>
@@ -675,7 +723,7 @@ function DetailPage() {
                           <StatLabel color="green.700">수확 가능 금액</StatLabel>
                           <HStack align="baseline" mt={2}>
                             <StatNumber fontSize="3xl" color="green.600">
-                              {investmentData.availableAmount.toLocaleString()}
+                              {Number(investmentData.availableAmount).toFixed(2)}
                             </StatNumber>
                             <Text color="green.600" fontSize="xl">원</Text>
                           </HStack>

@@ -1,5 +1,5 @@
 import Farm from "../components/Farm.jsx";
-import { Box, Container } from "@chakra-ui/react";
+import { Box, Container, useToast } from "@chakra-ui/react";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { customFetch } from "../utils/fetch";
@@ -9,6 +9,7 @@ import { motion } from "framer-motion";
 function HomePage() {
   const navigate = useNavigate();
   const [investments, setInvestments] = useState([]);
+  const toast = useToast();
 
   useEffect(() => {
     const fetchInvestments = async () => {
@@ -32,6 +33,24 @@ function HomePage() {
 
     fetchInvestments();
   }, []);
+
+  const handleInvestmentUpdate = (updatedInvestment) => {
+    toast({
+      title: "물 주기 완료",
+      description: "물을 정상적으로 줬습니다. 😊",
+      status: "success",
+      duration: 3000,
+      isClosable: true,
+    });
+    const amount = updatedInvestment.amount;
+    setInvestments(prevInvestments => 
+      prevInvestments.map(inv => 
+        inv.internal_position === updatedInvestment.internal_position 
+          ? updatedInvestment 
+          : inv
+      )
+    );
+  };
 
   return (
     <motion.div
@@ -60,7 +79,11 @@ function HomePage() {
             position="relative"
             zIndex={1}
           >
-            <Farm investments={investments} onNavigate={navigate} />
+            <Farm 
+              investments={investments} 
+              onNavigate={navigate} 
+              onInvestmentUpdate={handleInvestmentUpdate}
+            />
           </Box>
         </Box>
       </Container>
