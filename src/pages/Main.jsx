@@ -17,14 +17,40 @@ import {
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useUser } from '../contexts/UserContext';
 import Cloud from '../components/fancy/Cloud';
+import { useState, useEffect } from 'react';
 
 function Main() {
   const navigate = useNavigate();
   const location = useLocation();
   const { userInfo, isLoading, error } = useUser();
   const bgColor = useColorModeValue("white", "brand.darkGray");
+  const [isBirdFlying, setIsBirdFlying] = useState(false);
+
+  // Listen for custom event from Farm component
+  useEffect(() => {
+    const handleInvestmentComplete = () => {
+      setIsBirdFlying(true);
+      // Reset the animation state after it completes
+      setTimeout(() => {
+        setIsBirdFlying(false);
+      }, 7000); // Total animation duration (2s fly away + 3s wait + 2s fly back)
+    };
+
+    window.addEventListener('investmentComplete', handleInvestmentComplete);
+    return () => {
+      window.removeEventListener('investmentComplete', handleInvestmentComplete);
+    };
+  }, []);
 
   const clouds = [
+    {
+      size: "120px",
+      opacity: 0.9,
+      position: { top: "60px", right: "370px" },
+      delay: 1.5,
+      type: 'bird',
+      isFlying: isBirdFlying
+    },
     {
       size: "150px",
       opacity: 0.8,

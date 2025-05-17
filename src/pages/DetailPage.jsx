@@ -432,7 +432,28 @@ function DetailPage() {
   };
 
   return (
-    <Container maxW="1200px" px={6} py={10} maxH="88vh" overflowX="hidden" overflowY="auto" onClick={handleBackgroundClick}>
+    <Container 
+      maxW="1200px" 
+      px={6} 
+      py={10} 
+      maxH="88vh" 
+      overflowX="hidden" 
+      overflowY="auto"
+      sx={{
+        '&::-webkit-scrollbar': {
+          width: '8px',
+          backgroundColor: 'transparent'
+        },
+        '&::-webkit-scrollbar-thumb': {
+          backgroundColor: 'transparent'
+        },
+        '&::-webkit-scrollbar-track': {
+          backgroundColor: 'transparent'
+        },
+        scrollbarWidth: 'thin',
+        scrollbarColor: 'transparent transparent'
+      }}
+    >
       {isLoading ? (
         <Center h="500px">
           <Spinner size="xl" />
@@ -443,9 +464,12 @@ function DetailPage() {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -20 }}
           transition={{ duration: 0.5 }}
+          style={{
+            height: '100%',
+            overflowY: 'auto'
+          }}
         >
           <VStack spacing={8} align="stretch">
-            {/* 나머지 기존 컴포넌트들 */}
             <Card>
               <CardBody>
                 <VStack spacing={6}>
@@ -474,7 +498,6 @@ function DetailPage() {
               </CardBody>
             </Card>
 
-            {/* 코인 정보 카드 */}
             <Card
                 bg={useColorModeValue('white', 'gray.800')}
                 border="1px"
@@ -519,7 +542,6 @@ function DetailPage() {
               </CardBody>
             </Card>
 
-            {/* 가격 차트 */}
             <Card
                 bg={useColorModeValue('white', 'gray.800')}
                 border="1px"

@@ -502,6 +502,9 @@ const Farm = ({ investments = [], onInvestmentUpdate }) => {
             
             // 물주기 애니메이션 실행
             addWaterDrop();
+
+            // Dispatch custom event for bird animation
+            window.dispatchEvent(new Event('investmentComplete'));
             
         } catch (error) {
             console.error('입금 처리 중 오류:', error);
