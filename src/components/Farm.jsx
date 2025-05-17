@@ -10,6 +10,7 @@ import grassTexture from "../assets/farm/grass1.png";
 import bigTreeImage from "../assets/farm/big_tree.png";
 import littleTreeImage from "../assets/farm/little_tree.png";
 import smallTreeImage from "../assets/farm/small_tree.png";
+import waterDropImage from "../assets/waterdrop.png";
 import { motion, AnimatePresence } from "framer-motion";
 import {
     Box,
@@ -34,6 +35,7 @@ import {
     InputGroup,
     InputRightAddon,
     useDisclosure,
+    useToast,
 } from "@chakra-ui/react";
 import config from "../../config.json";
 
@@ -177,10 +179,10 @@ const WaterDrop = memo(({ x, onComplete }) => {
                 position: "absolute",
                 left: x,
                 top: y,
-                width: 10,
-                height: 10,
-                borderRadius: "50%",
-                backgroundColor: "#00bfff",
+                width: 20,  // 크기를 10에서 20으로 증가
+                height: 20, // 크기를 10에서 20으로 증가
+                backgroundImage: `url(${waterDropImage})`,
+                backgroundSize: "cover",
                 pointerEvents: "none",
                 zIndex: 3,
             }}
@@ -415,7 +417,7 @@ const Farm = ({ investments = [], onInvestmentUpdate }) => {
         // 투자봇의 x 좌표 기준으로 물방울 생성
         const baseX = selectedPosition.x + absTreeXOffset;
         const dropCount = 10; // 물방울 개수
-        const spread = 130; // 물방울이 퍼지는 범위
+        const spread = 80; // 퍼지는 범위를 130에서 80으로 줄임
 
         // 여러 개의 물방울 생성
         for (let i = 0; i < dropCount; i++) {
@@ -428,7 +430,7 @@ const Farm = ({ investments = [], onInvestmentUpdate }) => {
                         x: baseX + randomOffset
                     }
                 ]);
-            }, i * 100); // 각 물방울 사이에 200ms 간격
+            }, i * 100); // 각 물방울 사이에 100ms 간격
         }
 
         // 모든 물방울이 생성된 후 watering 상태 해제

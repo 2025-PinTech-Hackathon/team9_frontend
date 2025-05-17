@@ -5,6 +5,7 @@ import grassTexture from "../assets/farm/grass1.png";
 import bigTreeImage from "../assets/farm/big_tree.png";
 import littleTreeImage from "../assets/farm/little_tree.png";
 import smallTreeImage from "../assets/farm/small_tree.png";
+import waterDropImage from "../assets/waterdrop.png";
 extend({
   Container,
   Graphics,
@@ -84,6 +85,15 @@ const Ground = ({ x, y }) => {
 
 const WaterDrop = ({ x, y, onComplete }) => {
   const [position, setPosition] = useState({ x, y });
+  const [texture, setTexture] = useState(null);
+
+  useEffect(() => {
+    const loadTexture = async () => {
+      const loadedTexture = await Assets.load(waterDropImage);
+      setTexture(loadedTexture);
+    };
+    loadTexture();
+  }, []);
 
   useTick((delta) => {
     setPosition((prev) => ({
@@ -96,16 +106,17 @@ const WaterDrop = ({ x, y, onComplete }) => {
     }
   });
 
+  if (!texture) return null;
+
   return (
-    <pixiGraphics
-      x={position.x}
-      y={position.y}
-      draw={(g) => {
-        g.beginFill(0x00bfff);
-        g.drawCircle(0, 0, 5);
-        g.endFill();
-      }}
-    />
+    <pixiContainer x={position.x} y={position.y}>
+      <pixiSprite
+        texture={texture}
+        width={20}
+        height={20}
+        anchor={0.5}
+      />
+    </pixiContainer>
   );
 };
 
