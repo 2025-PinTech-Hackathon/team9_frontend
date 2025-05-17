@@ -611,20 +611,29 @@ const Farm = ({ investments = [], onInvestmentUpdate }) => {
                                     >
                                         {(() => {
                                             const profitRate = (investment.current_profit / investment.initial_amount) * 100;
+                                            const investmentAmount = investment.initial_amount + investment.current_profit;
                                             let treeImage;
                                             let treeScale;
 
-                                            if (profitRate < 10) {
+                                            // 수익률이나 투자금액 중 하나라도 큰 나무 조건을 만족하면 큰 나무로
+                                            if (profitRate < 10 && investmentAmount < 200000) {
                                                 treeImage = littleTreeImage;
                                                 treeScale = 0.7;
-                                            } else if (profitRate < 20) {
+                                            } else if ((profitRate >= 10 && profitRate < 20) || (investmentAmount >= 200000 && investmentAmount < 1000000)) {
                                                 treeImage = smallTreeImage;
                                                 treeScale = 0.85;
                                             } else {
                                                 treeImage = bigTreeImage;
-                                                // 20% 이상일 때 0.3배씩 추가 증가
-                                                const additionalScale = Math.floor((profitRate - 20) / 10) * 0.3;
-                                                treeScale = 1 + additionalScale;
+                                                if (profitRate >= 20 || investmentAmount >= 1000000) {
+                                                    // 300만원 단위로 크기 증가, 최대 2배까지
+                                                    const scaleByAmount = Math.min(1 + Math.floor((investmentAmount - 1000000) / 3000000) * 0.3, 2);
+                                                    // 수익률 10% 단위로 크기 증가, 최대 2배까지
+                                                    const scaleByProfit = Math.min(1 + Math.floor((profitRate - 20) / 10) * 0.3, 2);
+                                                    // 둘 중 더 큰 값 사용
+                                                    treeScale = Math.max(scaleByAmount, scaleByProfit);
+                                                } else {
+                                                    treeScale = 1;
+                                                }
                                             }
 
                                             return (
