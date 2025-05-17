@@ -81,7 +81,7 @@ const EmptyTileTooltip = memo(({ x, y }) => (
         transition={{ duration: 0.2 }}
         style={{
             position: "absolute",
-            left: x - 110,
+            left: x - 122,
             top: y - 60,
             zIndex: 9999,
             pointerEvents: "none",
